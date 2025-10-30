@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flower Bloom — Цветочный магазин</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    
+    <header>
+        <div class="logo">🌸 Flower Bloom</div>
+        <nav>
+            <a href="#home">Главная</a>
+            <a href="#shop">Каталог</a>
+            <a href="#contact">Контакты</a>
+            <a href="#" id="open-cart">🛒 Корзина (<span id="cart-count">0</span>)</a>
+        </nav>
+    </header>
+
+    
+    <section class="gif-section">
+        <video autoplay muted loop playsinline class="gif-video">
+            <source src="img/flowers.mp4" type="video/mp4">
+            Ваш браузер не поддерживает видео.
+        </video>
+        <div class="gif-overlay">
+            <h2>Почувствуй аромат весны 🌷</h2>
+            <p>Наши букеты созданы с любовью и нежностью</p>
+        </div>
+    </section>
+
+    
+    <section id="shop" class="shop-section">
+        <h2>Наши букеты</h2>
+        <div class="product-list">
+            <div class="product">
+                <img src="img/rose.jpg" alt="Розы">
+                <h3>Букет роз</h3>
+                <p>Цена: 6000 тг</p>
+                <button class="add-to-cart" data-name="Букет роз" data-price="6000">Добавить в корзину</button>
+            </div>
+            <div class="product">
+                <img src="img/tulip.jpg" alt="Тюльпаны">
+                <h3>Тюльпаны</h3>
+                <p>Цена: 5000 тг</p>
+                <button class="add-to-cart" data-name="Тюльпаны" data-price="5000">Добавить в корзину</button>
+            </div>
+            <div class="product">
+                <img src="img/lily.jpg" alt="Лилии">
+                <h3>Лилии</h3>
+                <p>Цена: 7000 тг</p>
+                <button class="add-to-cart" data-name="Лилии" data-price="7000">Добавить в корзину</button>
+            </div>
+        </div>
+    </section>
+
+    
+    <section id="feedback" class="contact-form-section">
+        <h3>Форма обратной связи:</h3>
+        <form id="contact-form" action="https://api.web3forms.com/submit" method="POST">
+            <input type="hidden" name="access_key" value="478e9d4f-db22-49b9-9041-7d27007a0eb8">
+            <label for="name">Имя:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="message">Сообщение:</label>
+            <textarea id="message" name="message" rows="4" required></textarea>
+
+            <button type="submit">Отправить сообщение</button>
+            <p id="form-message" style="display:none; color: lightgreen; margin-top: 10px;">
+                ✅ Сообщение успешно отправлено!
+            </p>
+        </form>
+    </section>
+
+   
+    <section id="contact" class="contact-section">
+        <h2>Контакты</h2>
+        <p>📍 Адрес: г. Алматы, ул. Цветочная 7</p>
+        <p>📞 Телефон: +7 (777) 123-45-67</p>
+        <p>📧 Email: info@flowerbloom.kz</p>
+    </section>
+
+    
+    <footer>
+        <p>© 2025 Flower Bloom. Все права защищены.</p>
+    </footer>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Ваша корзина</h2>
+            <ul id="cart-items"></ul>
+            <p id="total">Итого: 0 тг</p>
+
+            <h3>Оформление заказа</h3>
+            <form id="checkout-form">
+                <input type="text" id="buyer-name" placeholder="Ваше имя" required>
+                <input type="email" id="buyer-email" placeholder="Ваш Email" required>
+                <input type="text" id="buyer-address" placeholder="Адрес доставки" required>
+
+                <div class="payment-methods">
+                    <label><input type="radio" name="payment" value="card" checked> 💳 Картой</label>
+                    <label><input type="radio" name="payment" value="cash"> 💵 Наличными</label>
+                </div>
+
+                <div id="card-fields">
+                    <input type="text" id="card-number" placeholder="Номер карты (16 цифр)" maxlength="16">
+                    <div class="payment-row">
+                        <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5">
+                        <input type="text" id="card-cvv" placeholder="CVV" maxlength="3">
+                    </div>
+                </div>
+
+                <button type="submit" class="pay-btn">Оплатить</button>
+            </form>
+
+            <p id="order-success" class="success">✅ Покупка успешно оформлена!</p>
+            <p id="order-error" class="error">❌ Не удалось оформить заказ, проверьте данные!</p>
+        </div>
+    </div>
+
+    <!-- ✅ Сообщение об успешном добавлении в корзину -->
+    <div id="add-success" class="add-success">✅ Товар добавлен в корзину!</div>
+
+    <script src="script.js"></script>
+</body>
+</html>
