@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Interactive 3D Particle System</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             background-color: #000;
+            /* Запрещаем стандартные жесты браузера (например, свайп для обновления или прокрутку) */
+            touch-action: none; 
         }
         canvas {
             display: block;
@@ -58,22 +60,40 @@
         // Position camera
         camera.position.z = 3;
 
-        // 3. Mouse Interaction Setup
+        // 3. Mouse and Touch Interaction Setup
         let mouseX = 0;
         let mouseY = 0;
         let targetX = 0;
         let targetY = 0;
 
-        const windowHalfX = window.innerWidth / 2;
-        const windowHalfY = window.innerHeight / 2;
+        let windowHalfX = window.innerWidth / 2;
+        let windowHalfY = window.innerHeight / 2;
 
+        // Обработка мыши (для ПК)
         document.addEventListener('mousemove', (event) => {
             mouseX = (event.clientX - windowHalfX);
             mouseY = (event.clientY - windowHalfY);
         });
 
-        // Handle window resizing
+        // Обработка касаний (для мобильных телефонов)
+        document.addEventListener('touchmove', (event) => {
+            if (event.touches.length > 0) {
+                mouseX = (event.touches[0].clientX - windowHalfX);
+                mouseY = (event.touches[0].clientY - windowHalfY);
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchstart', (event) => {
+            if (event.touches.length > 0) {
+                mouseX = (event.touches[0].clientX - windowHalfX);
+                mouseY = (event.touches[0].clientY - windowHalfY);
+            }
+        }, { passive: false });
+
+        // Handle window resizing (адаптация при повороте экрана телефона)
         window.addEventListener('resize', () => {
+            windowHalfX = window.innerWidth / 2;
+            windowHalfY = window.innerHeight / 2;
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -91,7 +111,7 @@
             particlesMesh.rotation.y = elapsedTime * 0.1;
             particlesMesh.rotation.x = elapsedTime * 0.05;
 
-            // Make particles react to mouse movement (smooth interpolation)
+            // Make particles react to mouse/touch movement (smooth interpolation)
             targetX = mouseX * 0.001;
             targetY = mouseY * 0.001;
             
