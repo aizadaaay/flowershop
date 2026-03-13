@@ -1,126 +1,211 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Interactive 3D Particle System</title>
+    <title>AI Hand Controlled Particles</title>
     <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            background-color: #000;
-            /* Запрещаем стандартные жесты браузера (например, свайп для обновления или прокрутку) */
-            touch-action: none; 
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+        canvas { display: block; }
+        #ui-layer {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; text-align: center; pointer-events: none; text-shadow: 0 2px 4px rgba(0,0,0,0.8);
         }
-        canvas {
-            display: block;
-        }
+        #status { font-size: 1.2rem; margin-bottom: 10px; }
+        #instructions { font-size: 0.9rem; opacity: 0.7; }
+        /* Скрытое видео для захвата с камеры */
+        .input_video { display: none; }
     </style>
 </head>
 <body>
 
+    <div id="ui-layer">
+        <div id="status">⏳ Загрузка нейросети и камеры...</div>
+        <div id="instructions">Разрешите доступ к камере</div>
+    </div>
+
+    <video class="input_video" autoplay playsinline></video>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 
     <script>
-        // 1. Setup Scene, Camera, and Renderer
+        // --- 1. НАСТРОЙКА THREE.JS ---
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        
+        camera.position.z = 8;
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Оптимизация для мобилок
         document.body.appendChild(renderer.domElement);
 
-        // 2. Create Particles
-        const particlesGeometry = new THREE.BufferGeometry();
-        const particlesCount = 5000; // Number of particles
-        
-        const posArray = new Float32Array(particlesCount * 3);
-        
-        for(let i = 0; i < particlesCount * 3; i++) {
-            // Spread particles over a wider area
-            posArray[i] = (Math.random() - 0.5) * 10; 
-        }
-        
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        // --- 2. СИСТЕМА ЧАСТИЦ И ФОРМЫ ---
+        const particlesCount = 4000;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particlesCount * 3);
+        const targetPositions = new Float32Array(particlesCount * 3); // Куда частицы должны лететь
 
-        // Create a custom material for the particles
+        // Функция для генерации разных форм
+        function getShape(type) {
+            const arr = new Float32Array(particlesCount * 3);
+            for (let i = 0; i < particlesCount; i++) {
+                const i3 = i * 3;
+                if (type === 'sphere') {
+                    const r = 4;
+                    const theta = Math.random() * 2 * Math.PI;
+                    const phi = Math.acos(2 * Math.random() - 1);
+                    arr[i3] = r * Math.sin(phi) * Math.cos(theta);
+                    arr[i3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+                    arr[i3 + 2] = r * Math.cos(phi);
+                } else if (type === 'galaxy') {
+                    const radius = Math.random() * 5;
+                    const spinAngle = radius * 5;
+                    const branchAngle = (i % 3) * ((2 * Math.PI) / 3);
+                    arr[i3] = Math.cos(branchAngle + spinAngle) * radius + (Math.random() - 0.5);
+                    arr[i3 + 1] = (Math.random() - 0.5) * 0.5;
+                    arr[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + (Math.random() - 0.5);
+                } else { // Хаос (random)
+                    arr[i3] = (Math.random() - 0.5) * 15;
+                    arr[i3 + 1] = (Math.random() - 0.5) * 15;
+                    arr[i3 + 2] = (Math.random() - 0.5) * 15;
+                }
+            }
+            return arr;
+        }
+
+        const shapes = ['sphere', 'random', 'galaxy'];
+        let currentShapeIndex = 0;
+
+        // Заполняем начальные позиции (Хаос)
+        const initialShape = getShape('random');
+        for (let i = 0; i < positions.length; i++) {
+            positions[i] = initialShape[i];
+            targetPositions[i] = initialShape[i];
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
         const material = new THREE.PointsMaterial({
-            size: 0.025,
-            color: 0x00ffff, // Cyan color
+            size: 0.05,
+            color: 0x00ffff,
             transparent: true,
             opacity: 0.8,
             blending: THREE.AdditiveBlending
         });
 
-        // Combine geometry and material into a Points object
-        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        const particlesMesh = new THREE.Points(geometry, material);
         scene.add(particlesMesh);
 
-        // Position camera
-        camera.position.z = 3;
+        // --- 3. ИНТЕГРАЦИЯ MEDIAPIPE (НЕЙРОСЕТЬ ДЛЯ РУК) ---
+        const videoElement = document.querySelector('.input_video');
+        const statusEl = document.getElementById('status');
+        const instructionsEl = document.getElementById('instructions');
 
-        // 3. Mouse and Touch Interaction Setup
-        let mouseX = 0;
-        let mouseY = 0;
-        let targetX = 0;
-        let targetY = 0;
+        let handX = 0, handY = 0;
+        let isPinching = false;
+        let lastPinchTime = 0;
 
-        let windowHalfX = window.innerWidth / 2;
-        let windowHalfY = window.innerHeight / 2;
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
 
-        // Обработка мыши (для ПК)
-        document.addEventListener('mousemove', (event) => {
-            mouseX = (event.clientX - windowHalfX);
-            mouseY = (event.clientY - windowHalfY);
+        hands.setOptions({
+            maxNumHands: 1, // Отслеживаем одну руку для производительности
+            modelComplexity: 0, // 0 для мобилок быстрее, 1 точнее
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
         });
 
-        // Обработка касаний (для мобильных телефонов)
-        document.addEventListener('touchmove', (event) => {
-            if (event.touches.length > 0) {
-                mouseX = (event.touches[0].clientX - windowHalfX);
-                mouseY = (event.touches[0].clientY - windowHalfY);
+        hands.onResults((results) => {
+            // Убираем текст загрузки, когда всё работает
+            if (statusEl.style.display !== 'none') {
+                statusEl.style.display = 'none';
+                instructionsEl.innerText = "Двигайте рукой для вращения. Сомкните пальцы для смены формы!";
             }
-        }, { passive: false });
 
-        document.addEventListener('touchstart', (event) => {
-            if (event.touches.length > 0) {
-                mouseX = (event.touches[0].clientX - windowHalfX);
-                mouseY = (event.touches[0].clientY - windowHalfY);
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+                
+                // Координаты центра ладони (точка 9)
+                const wrist = landmarks[9];
+                // Инвертируем X, так как камера работает как зеркало
+                handX = (1 - wrist.x - 0.5) * 2; 
+                handY = -(wrist.y - 0.5) * 2;
+
+                // Детекция жеста "Щипок" (расстояние между большим (4) и указательным (8) пальцем)
+                const thumbTip = landmarks[4];
+                const indexTip = landmarks[8];
+                const distance = Math.sqrt(
+                    Math.pow(thumbTip.x - indexTip.x, 2) + 
+                    Math.pow(thumbTip.y - indexTip.y, 2)
+                );
+
+                if (distance < 0.05) { // Порог щипка
+                    const now = Date.now();
+                    if (!isPinching && now - lastPinchTime > 1000) { // Защита от случайных срабатываний
+                        isPinching = true;
+                        lastPinchTime = now;
+                        changeShape();
+                    }
+                } else {
+                    isPinching = false;
+                }
             }
-        }, { passive: false });
-
-        // Handle window resizing (адаптация при повороте экрана телефона)
-        window.addEventListener('resize', () => {
-            windowHalfX = window.innerWidth / 2;
-            windowHalfY = window.innerHeight / 2;
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // 4. Animation Loop
+        const cameraUtils = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        cameraUtils.start();
+
+        // --- 4. ЛОГИКА АНИМАЦИИ ---
+        function changeShape() {
+            currentShapeIndex = (currentShapeIndex + 1) % shapes.length;
+            const newPositions = getShape(shapes[currentShapeIndex]);
+            
+            // Меняем цвет в зависимости от формы
+            const colors = [0x00ffff, 0xff00ff, 0xffaa00];
+            material.color.setHex(colors[currentShapeIndex]);
+
+            for (let i = 0; i < targetPositions.length; i++) {
+                targetPositions[i] = newPositions[i];
+            }
+        }
+
         const clock = new THREE.Clock();
 
         function animate() {
             requestAnimationFrame(animate);
-
             const elapsedTime = clock.getElapsedTime();
 
-            // Slowly rotate the entire particle system
-            particlesMesh.rotation.y = elapsedTime * 0.1;
-            particlesMesh.rotation.x = elapsedTime * 0.05;
+            // Плавное вращение системы частиц за рукой
+            particlesMesh.rotation.y += (handX * 2 - particlesMesh.rotation.y) * 0.05;
+            particlesMesh.rotation.x += (handY * 2 - particlesMesh.rotation.x) * 0.05;
 
-            // Make particles react to mouse/touch movement (smooth interpolation)
-            targetX = mouseX * 0.001;
-            targetY = mouseY * 0.001;
-            
-            particlesMesh.rotation.y += 0.05 * (targetX - particlesMesh.rotation.y);
-            particlesMesh.rotation.x += 0.05 * (targetY - particlesMesh.rotation.x);
+            // Самостоятельное медленное вращение для красоты
+            particlesMesh.rotation.z = elapsedTime * 0.1;
 
-            // Render the scene
+            // Плавное перемещение частиц к их целевой форме (Морфинг)
+            const positionsArr = geometry.attributes.position.array;
+            for (let i = 0; i < positionsArr.length; i++) {
+                // Интерполяция (lerp) от текущей позиции к целевой
+                positionsArr[i] += (targetPositions[i] - positionsArr[i]) * 0.03;
+            }
+            geometry.attributes.position.needsUpdate = true;
+
             renderer.render(scene, camera);
         }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         animate();
     </script>
