@@ -183,7 +183,7 @@ const CONFIG = {
 };
 
 // ============================================================
-// ГЕНЕРАТОРЫ ФОРМ (ГАЛАКТИКА УЛУЧШЕНА)
+// ГЕНЕРАТОРЫ ФОРМ
 // ============================================================
 const SHAPES = [
     { name: 'ХАОС', color: 0x00ffff, gen: genRandom },
@@ -199,31 +199,26 @@ let currentShape = 0;
 
 function genRandom(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ a[i*3]=(Math.random()-0.5)*18; a[i*3+1]=(Math.random()-0.5)*18; a[i*3+2]=(Math.random()-0.5)*18; } return a; }
 function genSphere(n) { const a = new Float32Array(n*3); const r=4.5; for(let i=0;i<n;i++){ const t=Math.random()*2*Math.PI, p=Math.acos(2*Math.random()-1), dr=r+(Math.random()-0.5)*0.3; a[i*3]=dr*Math.sin(p)*Math.cos(t); a[i*3+1]=dr*Math.sin(p)*Math.sin(t); a[i*3+2]=dr*Math.cos(p); } return a; }
-
-// НОВАЯ: Более реалистичная галактика (ядро + спирали + плоский диск)
 function genGalaxy(n) { 
     const a = new Float32Array(n*3); 
-    const arms = 3; // Количество рукавов
-    const spin = 1.6; // Закрученность
+    const arms = 3; 
+    const spin = 1.6; 
     for(let i=0; i<n; i++){ 
-        // Экспоненциальное распределение: больше частиц ближе к центру (ядро)
         const r = Math.pow(Math.random(), 1.8) * 6.5; 
         const branchAngle = (i % arms) * ((2 * Math.PI) / arms);
         const angle = branchAngle + r * spin;
         
-        // Чем дальше от центра, тем больше разброс частиц (рукава размываются)
         const scatter = 0.1 + (r * 0.15);
         const rx = (Math.random() - 0.5) * scatter;
-        const ry = (Math.random() - 0.5) * (scatter * 0.3); // Делаем диск плоским по оси Y
+        const ry = (Math.random() - 0.5) * (scatter * 0.3); 
         const rz = (Math.random() - 0.5) * scatter;
 
         a[i*3] = Math.cos(angle) * r + rx; 
-        a[i*3+1] = ry + (Math.random()-0.5)*0.2; // Ядро чуть толще
+        a[i*3+1] = ry + (Math.random()-0.5)*0.2; 
         a[i*3+2] = Math.sin(angle) * r + rz; 
     } 
     return a; 
 }
-
 function genTorus(n) { const a = new Float32Array(n*3); const R=3.5, r=1.2; for(let i=0;i<n;i++){ const u=Math.random()*2*Math.PI, v=Math.random()*2*Math.PI, nz=(Math.random()-0.5)*0.2; a[i*3]=(R+r*Math.cos(v))*Math.cos(u)+nz; a[i*3+1]=(R+r*Math.cos(v))*Math.sin(u)+nz; a[i*3+2]=r*Math.sin(v)+nz; } return a; }
 function genCube(n) { const a = new Float32Array(n*3); const s=3.5; for(let i=0;i<n;i++){ const f=Math.floor(Math.random()*6); let x,y,z; const u=(Math.random()-0.5)*s*2, v=(Math.random()-0.5)*s*2; if(f===0){x=s;y=u;z=v;}else if(f===1){x=-s;y=u;z=v;}else if(f===2){x=u;y=s;z=v;}else if(f===3){x=u;y=-s;z=v;}else if(f===4){x=u;y=v;z=s;}else{x=u;y=v;z=-s;} a[i*3]=x;a[i*3+1]=y;a[i*3+2]=z; } return a; }
 function genDNA(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(i/n)*Math.PI*8, st=i%2, off=st*Math.PI, r=1.5+(Math.random()-0.5)*0.2, y=(t/(Math.PI*8))*10-5; a[i*3]=Math.cos(t+off)*r; a[i*3+1]=y; a[i*3+2]=Math.sin(t+off)*r; } return a; }
@@ -235,7 +230,6 @@ function genHeart(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ co
 const scene = new THREE.Scene();
 const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
 
-// ДИНАМИЧЕСКОЕ ОТДАЛЕНИЕ КАМЕРЫ ДЛЯ МОБИЛОК (чтобы фигуры не обрезались)
 function updateCameraPosition() {
     camThree.position.z = window.innerWidth < 768 ? 14 : 9;
 }
@@ -309,34 +303,28 @@ function updateDots(idx) {
 }
 
 // ============================================================
-// УПРАВЛЕНИЕ МЫШЬЮ И КАСАНИЯМИ ЭКРАНА
+// УПРАВЛЕНИЕ МЫШЬЮ И КАСАНИЯМИ
 // ============================================================
 let rotX = 0, rotY = 0;
 let handDetected = false;
 let isExploding = false;
 let lastClickTime = 0;
 
-const canvasContainer = document.getElementById('canvas-container');
-
-// Вращение касанием/мышью
 window.addEventListener('pointermove', (e) => {
-    if (handDetected) return; // Если есть рука, экран не перебивает управление
+    if (handDetected) return; 
     const nx = (e.clientX / innerWidth - 0.5) * 2;
     const ny = -(e.clientY / innerHeight - 0.5) * 2;
     rotX = ny * 1.5;
     rotY = nx * 1.5;
 });
 
-// Клик / Тап по экрану
 window.addEventListener('pointerdown', (e) => {
     if (handDetected || isExploding) return;
     
     const now = Date.now();
-    // Проверка на двойной клик (менее 300мс между тапами)
     if (now - lastClickTime < 300) {
         triggerExplosion();
     } else {
-        // Одиночный клик - смена формы
         currentShape = (currentShape + 1) % SHAPES.length;
         setShape(currentShape);
     }
@@ -468,7 +456,7 @@ function triggerExplosion() {
 }
 
 // ============================================================
-// АНИМАЦИЯ И РЕНДЕР
+// АНИМАЦИЯ И РЕНДЕР С ЭФФЕКТОМ "ДЫХАНИЯ"
 // ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
@@ -497,8 +485,17 @@ function animate() {
             velocity[i*3+2] *= 0.92;
         }
     } else {
-        for (let i = 0; i < pArr.length; i++) {
-            pArr[i] += (target[i] - pArr[i]) * CONFIG.LERP_MORPH;
+        // Эффект плавного дыхания (колебания)
+        const time = elapsed * 1.2; 
+        
+        for (let i = 0; i < N; i++) {
+            const offsetX = Math.sin(time + i * 0.05) * 0.15;
+            const offsetY = Math.cos(time + i * 0.05) * 0.15;
+            const offsetZ = Math.sin(time + i * 0.03) * 0.15;
+
+            pArr[i*3]     += ((target[i*3]     + offsetX) - pArr[i*3])     * CONFIG.LERP_MORPH;
+            pArr[i*3 + 1] += ((target[i*3 + 1] + offsetY) - pArr[i*3 + 1]) * CONFIG.LERP_MORPH;
+            pArr[i*3 + 2] += ((target[i*3 + 2] + offsetZ) - pArr[i*3 + 2]) * CONFIG.LERP_MORPH;
         }
     }
     geo.attributes.position.needsUpdate = true;
