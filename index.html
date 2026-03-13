@@ -1,132 +1,108 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flower Bloom — Цветочный магазин</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Interactive 3D Particle System</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-    
-    <header>
-        <div class="logo">🌸 Flower Bloom</div>
-        <nav>
-            <a href="#home">Главная</a>
-            <a href="#shop">Каталог</a>
-            <a href="#contact">Контакты</a>
-            <a href="#" id="open-cart">🛒 Корзина (<span id="cart-count">0</span>)</a>
-        </nav>
-    </header>
 
-    
-    <section class="gif-section">
-        <video autoplay muted loop playsinline class="gif-video">
-            <source src="img/flowers.mp4" type="video/mp4">
-            Ваш браузер не поддерживает видео.
-        </video>
-        <div class="gif-overlay">
-            <h2>Почувствуй аромат весны 🌷</h2>
-            <p>Наши букеты созданы с любовью и нежностью</p>
-        </div>
-    </section>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    
-    <section id="shop" class="shop-section">
-        <h2>Наши букеты</h2>
-        <div class="product-list">
-            <div class="product">
-                <img src="img/rose.jpg" alt="Розы">
-                <h3>Букет роз</h3>
-                <p>Цена: 6000 тг</p>
-                <button class="add-to-cart" data-name="Букет роз" data-price="6000">Добавить в корзину</button>
-            </div>
-            <div class="product">
-                <img src="img/tulip.jpg" alt="Тюльпаны">
-                <h3>Тюльпаны</h3>
-                <p>Цена: 5000 тг</p>
-                <button class="add-to-cart" data-name="Тюльпаны" data-price="5000">Добавить в корзину</button>
-            </div>
-            <div class="product">
-                <img src="img/lily.jpg" alt="Лилии">
-                <h3>Лилии</h3>
-                <p>Цена: 7000 тг</p>
-                <button class="add-to-cart" data-name="Лилии" data-price="7000">Добавить в корзину</button>
-            </div>
-        </div>
-    </section>
+    <script>
+        // 1. Setup Scene, Camera, and Renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
 
-    
-    <section id="feedback" class="contact-form-section">
-        <h3>Форма обратной связи:</h3>
-        <form id="contact-form" action="https://api.web3forms.com/submit" method="POST">
-            <input type="hidden" name="access_key" value="478e9d4f-db22-49b9-9041-7d27007a0eb8">
-            <label for="name">Имя:</label>
-            <input type="text" id="name" name="name" required>
+        // 2. Create Particles
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 5000; // Number of particles
+        
+        const posArray = new Float32Array(particlesCount * 3);
+        
+        for(let i = 0; i < particlesCount * 3; i++) {
+            // Spread particles over a wider area
+            posArray[i] = (Math.random() - 0.5) * 10; 
+        }
+        
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
 
-            <label for="email">Email:</label>
-            <input type="email" id="email" name="email" required>
+        // Create a custom material for the particles
+        const material = new THREE.PointsMaterial({
+            size: 0.025,
+            color: 0x00ffff, // Cyan color
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
 
-            <label for="message">Сообщение:</label>
-            <textarea id="message" name="message" rows="4" required></textarea>
+        // Combine geometry and material into a Points object
+        const particlesMesh = new THREE.Points(particlesGeometry, material);
+        scene.add(particlesMesh);
 
-            <button type="submit">Отправить сообщение</button>
-            <p id="form-message" style="display:none; color: lightgreen; margin-top: 10px;">
-                ✅ Сообщение успешно отправлено!
-            </p>
-        </form>
-    </section>
+        // Position camera
+        camera.position.z = 3;
 
-   
-    <section id="contact" class="contact-section">
-        <h2>Контакты</h2>
-        <p>📍 Адрес: г. Алматы, ул. Цветочная 7</p>
-        <p>📞 Телефон: +7 (777) 123-45-67</p>
-        <p>📧 Email: info@flowerbloom.kz</p>
-    </section>
+        // 3. Mouse Interaction Setup
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
 
-    
-    <footer>
-        <p>© 2025 Flower Bloom. Все права защищены.</p>
-    </footer>
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
 
-    <div id="cart-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Ваша корзина</h2>
-            <ul id="cart-items"></ul>
-            <p id="total">Итого: 0 тг</p>
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX - windowHalfX);
+            mouseY = (event.clientY - windowHalfY);
+        });
 
-            <h3>Оформление заказа</h3>
-            <form id="checkout-form">
-                <input type="text" id="buyer-name" placeholder="Ваше имя" required>
-                <input type="email" id="buyer-email" placeholder="Ваш Email" required>
-                <input type="text" id="buyer-address" placeholder="Адрес доставки" required>
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
-                <div class="payment-methods">
-                    <label><input type="radio" name="payment" value="card" checked> 💳 Картой</label>
-                    <label><input type="radio" name="payment" value="cash"> 💵 Наличными</label>
-                </div>
+        // 4. Animation Loop
+        const clock = new THREE.Clock();
 
-                <div id="card-fields">
-                    <input type="text" id="card-number" placeholder="Номер карты (16 цифр)" maxlength="16">
-                    <div class="payment-row">
-                        <input type="text" id="card-expiry" placeholder="MM/YY" maxlength="5">
-                        <input type="text" id="card-cvv" placeholder="CVV" maxlength="3">
-                    </div>
-                </div>
+        function animate() {
+            requestAnimationFrame(animate);
 
-                <button type="submit" class="pay-btn">Оплатить</button>
-            </form>
+            const elapsedTime = clock.getElapsedTime();
 
-            <p id="order-success" class="success">✅ Покупка успешно оформлена!</p>
-            <p id="order-error" class="error">❌ Не удалось оформить заказ, проверьте данные!</p>
-        </div>
-    </div>
+            // Slowly rotate the entire particle system
+            particlesMesh.rotation.y = elapsedTime * 0.1;
+            particlesMesh.rotation.x = elapsedTime * 0.05;
 
-    <!-- ✅ Сообщение об успешном добавлении в корзину -->
-    <div id="add-success" class="add-success">✅ Товар добавлен в корзину!</div>
+            // Make particles react to mouse movement (smooth interpolation)
+            targetX = mouseX * 0.001;
+            targetY = mouseY * 0.001;
+            
+            particlesMesh.rotation.y += 0.05 * (targetX - particlesMesh.rotation.y);
+            particlesMesh.rotation.x += 0.05 * (targetY - particlesMesh.rotation.x);
 
-    <script src="script.js"></script>
+            // Render the scene
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
 </body>
 </html>
