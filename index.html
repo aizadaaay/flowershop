@@ -6,220 +6,136 @@
     <title>✋ Hand Particle Universe</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
- 
+
         body {
             background: #000;
             overflow: hidden;
             font-family: 'Courier New', monospace;
             touch-action: none;
         }
- 
-        #canvas-container {
-            position: fixed;
-            inset: 0;
-        }
- 
+
+        #canvas-container { position: fixed; inset: 0; }
+
         /* HUD */
         #hud {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            padding: 16px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            pointer-events: none;
-            z-index: 10;
+            position: fixed; top: 0; left: 0; right: 0;
+            padding: 16px 20px; display: flex;
+            justify-content: space-between; align-items: flex-start;
+            pointer-events: none; z-index: 10;
         }
- 
+
         #shape-name {
-            font-size: clamp(18px, 4vw, 28px);
-            font-weight: 700;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #fff;
-            text-shadow: 0 0 20px currentColor;
+            font-size: clamp(18px, 4vw, 28px); font-weight: 700;
+            letter-spacing: 0.2em; text-transform: uppercase;
+            color: #fff; text-shadow: 0 0 20px currentColor;
             transition: color 0.6s, text-shadow 0.6s;
         }
- 
+
         #particle-count {
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
-            letter-spacing: 0.15em;
-            text-align: right;
-            line-height: 1.8;
+            font-size: 11px; color: rgba(255,255,255,0.4);
+            letter-spacing: 0.15em; text-align: right; line-height: 1.8;
         }
- 
+
         /* Status overlay */
         #overlay {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            transition: opacity 0.8s;
-            gap: 20px;
+            position: fixed; inset: 0; background: #000;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 100; transition: opacity 0.8s; gap: 20px;
         }
- 
-        #overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
- 
+        #overlay.hidden { opacity: 0; pointer-events: none; }
+
         .loader-ring {
             width: 60px; height: 60px;
             border: 2px solid rgba(255,255,255,0.1);
-            border-top-color: #00ffff;
-            border-radius: 50%;
+            border-top-color: #00ffff; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
- 
         @keyframes spin { to { transform: rotate(360deg); } }
- 
+
         #overlay-text {
-            color: #fff;
-            font-size: 14px;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            opacity: 0.8;
-            text-align: center;
-            padding: 0 20px;
-            line-height: 1.6;
+            color: #fff; font-size: 14px; letter-spacing: 0.2em;
+            text-transform: uppercase; opacity: 0.8; text-align: center;
+            padding: 0 20px; line-height: 1.6;
         }
- 
-        /* Camera preview (tiny, corner) */
+
+        /* Camera preview */
         #cam-preview {
-            position: fixed;
-            bottom: 16px;
-            right: 16px;
-            width: clamp(80px, 15vw, 120px);
-            aspect-ratio: 4/3;
-            border-radius: 8px;
-            overflow: hidden;
+            position: fixed; bottom: 16px; right: 16px;
+            width: clamp(80px, 15vw, 120px); aspect-ratio: 4/3;
+            border-radius: 8px; overflow: hidden;
             border: 1px solid rgba(255,255,255,0.15);
-            opacity: 0.5;
-            z-index: 10;
-            transform: scaleX(-1);
+            opacity: 0.5; z-index: 10; transform: scaleX(-1);
         }
- 
-        #cam-preview video {
-            width: 100%; height: 100%;
-            object-fit: cover;
-        }
- 
+        #cam-preview video { width: 100%; height: 100%; object-fit: cover; }
+
         /* Gesture guide */
         #gesture-guide {
-            position: fixed;
-            bottom: 16px;
-            left: 16px;
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+            position: fixed; bottom: 16px; left: 16px;
+            z-index: 10; pointer-events: none;
+            display: flex; flex-direction: column; gap: 6px;
         }
- 
         .gesture-item {
-            font-size: 11px;
-            color: rgba(255,255,255,0.4);
-            letter-spacing: 0.1em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 11px; color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px;
         }
- 
-        .gesture-icon {
-            font-size: 16px;
-        }
- 
+        .gesture-icon { font-size: 16px; }
+
         /* Shape indicator dots */
         #shape-dots {
-            position: fixed;
-            top: 50%;
-            right: 16px;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            z-index: 10;
-            pointer-events: none;
+            position: fixed; top: 50%; right: 16px; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 8px; z-index: 10;
         }
- 
         .dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.2);
-            transition: all 0.4s;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); transition: all 0.4s;
         }
- 
         .dot.active {
-            background: #fff;
-            box-shadow: 0 0 8px #fff;
-            transform: scale(1.5);
+            background: #fff; box-shadow: 0 0 8px #fff; transform: scale(1.5);
         }
- 
+
         /* Pinch flash effect */
         #flash {
-            position: fixed;
-            inset: 0;
-            background: #fff;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 50;
-            transition: opacity 0.1s;
+            position: fixed; inset: 0; background: #fff; opacity: 0;
+            pointer-events: none; z-index: 50; transition: opacity 0.1s;
         }
- 
-        #flash.show {
-            opacity: 0.15;
-        }
- 
+        #flash.show { opacity: 0.15; }
+
         /* Hand cursor */
         #hand-cursor {
-            position: fixed;
-            width: 20px; height: 20px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.6);
-            pointer-events: none;
-            z-index: 20;
+            position: fixed; width: 20px; height: 20px;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.6);
+            pointer-events: none; z-index: 20;
             transform: translate(-50%, -50%);
-            transition: border-color 0.2s, transform 0.05s, box-shadow 0.2s;
+            transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
             mix-blend-mode: screen;
         }
- 
         #hand-cursor.pinching {
-            border-color: #ff00ff;
-            box-shadow: 0 0 20px #ff00ff;
-            transform: translate(-50%, -50%) scale(0.5);
+            border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff;
+            transform: translate(-50%, -50%) scale(0.5); border-width: 4px;
         }
- 
-        /* No camera fallback - mouse control */
+        #hand-cursor.fist {
+            border-color: #ff4444; box-shadow: 0 0 20px #ff4444;
+            transform: translate(-50%, -50%) scale(1.5); border-radius: 4px; /* Квадратный курсор для кулака */
+        }
+
         #mouse-fallback {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 11px;
-            color: rgba(255,255,255,0.3);
-            letter-spacing: 0.15em;
-            z-index: 10;
-            pointer-events: none;
-            text-align: center;
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            font-size: 11px; color: rgba(255,255,255,0.3); letter-spacing: 0.15em;
+            z-index: 10; pointer-events: none; text-align: center;
         }
     </style>
 </head>
 <body>
- 
+
 <div id="overlay">
     <div class="loader-ring"></div>
     <div id="overlay-text">ИНИЦИАЛИЗАЦИЯ<br>НЕЙРОСЕТИ...</div>
 </div>
- 
+
 <div id="flash"></div>
- 
 <div id="canvas-container"></div>
- 
+
 <div id="hud">
     <div id="shape-name">ХАОС</div>
     <div id="particle-count">
@@ -227,343 +143,207 @@
         <span id="p-count">5000</span> ЧАСТИЦ
     </div>
 </div>
- 
+
 <div id="hand-cursor"></div>
- 
 <div id="shape-dots"></div>
- 
+
 <div id="cam-preview">
     <video id="video-el" autoplay playsinline muted></video>
 </div>
- 
+
 <div id="gesture-guide">
     <div class="gesture-item"><span class="gesture-icon">✋</span> ДВИЖЕНИЕ = ВРАЩЕНИЕ</div>
     <div class="gesture-item"><span class="gesture-icon">🤏</span> ЩИПОК = ФОРМА</div>
     <div class="gesture-item"><span class="gesture-icon">✊</span> КУЛАК = ВЗРЫВ</div>
 </div>
- 
+
 <div id="mouse-fallback">МЫШЬ / КАСАНИЕ ТОЖЕ РАБОТАЕТ</div>
- 
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
- 
+
 <script>
 // ============================================================
 // КОНФИГ
 // ============================================================
 const CONFIG = {
-    PARTICLE_COUNT: window.innerWidth < 768 ? 3000 : 5000,
-    LERP_MORPH: 0.025,
-    LERP_ROTATION: 0.06,
-    PINCH_THRESHOLD: 0.055,
-    FIST_THRESHOLD: 0.12,
-    PINCH_COOLDOWN: 800,
-    AUTO_ROTATE_SPEED: 0.12,
+    PARTICLE_COUNT: window.innerWidth < 768 ? 2000 : 4000,
+    LERP_MORPH: 0.03,
+    LERP_ROTATION: 0.08,
+    // Пороги теперь относительные (доли от размера ладони)
+    PINCH_THRESHOLD: 0.25, 
+    FIST_THRESHOLD: 1.1, 
+    PINCH_COOLDOWN: 1000,
+    AUTO_ROTATE_SPEED: 0.1,
 };
- 
+
 // ============================================================
-// SHAPES CONFIG
+// ГЕНЕРАТОРЫ ФОРМ (без изменений, они отличные)
 // ============================================================
 const SHAPES = [
-    { name: 'ХАОС',     color: 0x00ffff,  hue: '180deg',  gen: genRandom },
-    { name: 'СФЕРА',    color: 0x00ff88,  hue: '150deg',  gen: genSphere },
-    { name: 'ГАЛАКТИКА',color: 0xff8800,  hue: '30deg',   gen: genGalaxy },
-    { name: 'ТОРУС',    color: 0xff00ff,  hue: '300deg',  gen: genTorus  },
-    { name: 'КУРАТОР',  color: 0xffff00,  hue: '60deg',   gen: genCube   },
-    { name: 'ДНК',      color: 0x88aaff,  hue: '230deg',  gen: genDNA    },
-    { name: 'ВЗРЫВ',    color: 0xff4444,  hue: '0deg',    gen: genExplosion },
-    { name: 'СЕРДЦЕ',   color: 0xff2255,  hue: '340deg',  gen: genHeart  },
+    { name: 'ХАОС', color: 0x00ffff, gen: genRandom },
+    { name: 'СФЕРА', color: 0x00ff88, gen: genSphere },
+    { name: 'ГАЛАКТИКА', color: 0xff8800, gen: genGalaxy },
+    { name: 'ТОРУС', color: 0xff00ff, gen: genTorus },
+    { name: 'КУБ', color: 0xffff00, gen: genCube },
+    { name: 'ДНК', color: 0x88aaff, gen: genDNA },
+    { name: 'СЕРДЦЕ', color: 0xff2255, gen: genHeart },
 ];
- 
+
 let currentShape = 0;
- 
+
+function genRandom(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ a[i*3]=(Math.random()-0.5)*18; a[i*3+1]=(Math.random()-0.5)*18; a[i*3+2]=(Math.random()-0.5)*18; } return a; }
+function genSphere(n) { const a = new Float32Array(n*3); const r=4; for(let i=0;i<n;i++){ const t=Math.random()*2*Math.PI, p=Math.acos(2*Math.random()-1), dr=r+(Math.random()-0.5)*0.3; a[i*3]=dr*Math.sin(p)*Math.cos(t); a[i*3+1]=dr*Math.sin(p)*Math.sin(t); a[i*3+2]=dr*Math.cos(p); } return a; }
+function genGalaxy(n) { const a = new Float32Array(n*3); const arms=3; for(let i=0;i<n;i++){ const r=Math.pow(Math.random(),0.5)*5.5, s=r*4, b=(i%arms)*((2*Math.PI)/arms), sp=(Math.random()-0.5)*0.8*(1-r/6); a[i*3]=Math.cos(b+s)*r+sp; a[i*3+1]=(Math.random()-0.5)*0.4; a[i*3+2]=Math.sin(b+s)*r+sp; } return a; }
+function genTorus(n) { const a = new Float32Array(n*3); const R=3.5, r=1.2; for(let i=0;i<n;i++){ const u=Math.random()*2*Math.PI, v=Math.random()*2*Math.PI, nz=(Math.random()-0.5)*0.2; a[i*3]=(R+r*Math.cos(v))*Math.cos(u)+nz; a[i*3+1]=(R+r*Math.cos(v))*Math.sin(u)+nz; a[i*3+2]=r*Math.sin(v)+nz; } return a; }
+function genCube(n) { const a = new Float32Array(n*3); const s=4; for(let i=0;i<n;i++){ const f=Math.floor(Math.random()*6); let x,y,z; const u=(Math.random()-0.5)*s*2, v=(Math.random()-0.5)*s*2; if(f===0){x=s;y=u;z=v;}else if(f===1){x=-s;y=u;z=v;}else if(f===2){x=u;y=s;z=v;}else if(f===3){x=u;y=-s;z=v;}else if(f===4){x=u;y=v;z=s;}else{x=u;y=v;z=-s;} a[i*3]=x;a[i*3+1]=y;a[i*3+2]=z; } return a; }
+function genDNA(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(i/n)*Math.PI*8, st=i%2, off=st*Math.PI, r=1.5+(Math.random()-0.5)*0.2, y=(t/(Math.PI*8))*10-5; a[i*3]=Math.cos(t+off)*r; a[i*3+1]=y; a[i*3+2]=Math.sin(t+off)*r; } return a; }
+function genHeart(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(Math.random()*2-1)*Math.PI, sc=0.8; const x=16*Math.pow(Math.sin(t),3), y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t), z=(Math.random()-0.5)*2; a[i*3]=x*sc*0.2; a[i*3+1]=y*sc*0.2; a[i*3+2]=z; } return a; }
+
 // ============================================================
-// SHAPE GENERATORS
+// THREE.JS ИНИЦИАЛИЗАЦИЯ
 // ============================================================
-function genRandom(n) {
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-        a[i*3]   = (Math.random()-0.5)*18;
-        a[i*3+1] = (Math.random()-0.5)*18;
-        a[i*3+2] = (Math.random()-0.5)*18;
-    }
-    return a;
-}
- 
-function genSphere(n) {
-    const a = new Float32Array(n * 3);
-    const r = 4;
-    for (let i = 0; i < n; i++) {
-        const theta = Math.random() * 2 * Math.PI;
-        const phi   = Math.acos(2 * Math.random() - 1);
-        const dr    = r + (Math.random()-0.5)*0.3;
-        a[i*3]   = dr * Math.sin(phi) * Math.cos(theta);
-        a[i*3+1] = dr * Math.sin(phi) * Math.sin(theta);
-        a[i*3+2] = dr * Math.cos(phi);
-    }
-    return a;
-}
- 
-function genGalaxy(n) {
-    const a = new Float32Array(n * 3);
-    const arms = 3;
-    for (let i = 0; i < n; i++) {
-        const radius = Math.pow(Math.random(), 0.5) * 5.5;
-        const spin   = radius * 4;
-        const branch = (i % arms) * ((2 * Math.PI) / arms);
-        const spread = (Math.random()-0.5) * 0.8 * (1 - radius/6);
-        a[i*3]   = Math.cos(branch + spin) * radius + spread;
-        a[i*3+1] = (Math.random()-0.5) * 0.4;
-        a[i*3+2] = Math.sin(branch + spin) * radius + spread;
-    }
-    return a;
-}
- 
-function genTorus(n) {
-    const a = new Float32Array(n * 3);
-    const R = 3.5, r = 1.2;
-    for (let i = 0; i < n; i++) {
-        const u = Math.random() * 2 * Math.PI;
-        const v = Math.random() * 2 * Math.PI;
-        const noise = (Math.random()-0.5)*0.2;
-        a[i*3]   = (R + r * Math.cos(v)) * Math.cos(u) + noise;
-        a[i*3+1] = (R + r * Math.cos(v)) * Math.sin(u) + noise;
-        a[i*3+2] = r * Math.sin(v) + noise;
-    }
-    return a;
-}
- 
-function genCube(n) {
-    const a = new Float32Array(n * 3);
-    const s = 4;
-    for (let i = 0; i < n; i++) {
-        const face = Math.floor(Math.random() * 6);
-        let x, y, z;
-        const u = (Math.random()-0.5)*s*2;
-        const v = (Math.random()-0.5)*s*2;
-        if (face === 0) { x= s; y=u; z=v; }
-        else if (face === 1) { x=-s; y=u; z=v; }
-        else if (face === 2) { x=u; y= s; z=v; }
-        else if (face === 3) { x=u; y=-s; z=v; }
-        else if (face === 4) { x=u; y=v; z= s; }
-        else                 { x=u; y=v; z=-s; }
-        a[i*3]=x; a[i*3+1]=y; a[i*3+2]=z;
-    }
-    return a;
-}
- 
-function genDNA(n) {
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-        const t = (i / n) * Math.PI * 8;
-        const strand = i % 2;
-        const offset = strand * Math.PI;
-        const r = 1.5 + (Math.random()-0.5)*0.2;
-        const y = (t / (Math.PI * 8)) * 10 - 5;
-        a[i*3]   = Math.cos(t + offset) * r;
-        a[i*3+1] = y;
-        a[i*3+2] = Math.sin(t + offset) * r;
-    }
-    return a;
-}
- 
-function genExplosion(n) {
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-        const theta = Math.random() * 2 * Math.PI;
-        const phi   = Math.acos(2*Math.random()-1);
-        const r = 2 + Math.random() * 4;
-        a[i*3]   = r * Math.sin(phi) * Math.cos(theta);
-        a[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
-        a[i*3+2] = r * Math.cos(phi);
-    }
-    return a;
-}
- 
-function genHeart(n) {
-    const a = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-        const t = (Math.random() * 2 - 1) * Math.PI;
-        const scale = 0.8;
-        // Параметрическое сердце
-        const x = 16 * Math.pow(Math.sin(t), 3);
-        const y = 13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t);
-        const z = (Math.random()-0.5)*2;
-        a[i*3]   = x * scale * 0.2;
-        a[i*3+1] = y * scale * 0.2;
-        a[i*3+2] = z;
-    }
-    return a;
-}
- 
-// ============================================================
-// THREE.JS SETUP
-// ============================================================
-const scene    = new THREE.Scene();
+const scene = new THREE.Scene();
 const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
 camThree.position.z = 9;
- 
+
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.getElementById('canvas-container').appendChild(renderer.domElement);
- 
-// Particles
+
 const N = CONFIG.PARTICLE_COUNT;
 document.getElementById('p-count').textContent = N;
 const geo = new THREE.BufferGeometry();
 const pos = new Float32Array(N * 3);
 const col = new Float32Array(N * 3);
 const target = new Float32Array(N * 3);
-const velocity = new Float32Array(N * 3); // for explosion effect
- 
-// Init with random
+const velocity = new Float32Array(N * 3);
+
 const initPos = genRandom(N);
 for (let i = 0; i < pos.length; i++) { pos[i] = initPos[i]; target[i] = initPos[i]; }
- 
+
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-geo.setAttribute('color',    new THREE.BufferAttribute(col, 3));
- 
-// Set initial colors
-updateColors(0x00ffff);
- 
-const mat = new THREE.PointsMaterial({
-    size: window.innerWidth < 768 ? 0.06 : 0.05,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.85,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-});
- 
-const particles = new THREE.Points(geo, mat);
-scene.add(particles);
- 
+geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+
 function updateColors(hex) {
     const c = new THREE.Color(hex);
     for (let i = 0; i < N; i++) {
-        const noise = 0.7 + Math.random() * 0.3;
-        col[i*3]   = c.r * noise;
-        col[i*3+1] = c.g * noise;
-        col[i*3+2] = c.b * noise;
+        const noise = 0.6 + Math.random() * 0.4;
+        col[i*3] = c.r * noise; col[i*3+1] = c.g * noise; col[i*3+2] = c.b * noise;
     }
     geo.attributes.color.needsUpdate = true;
 }
- 
+
+updateColors(0x00ffff);
+
+const mat = new THREE.PointsMaterial({
+    size: window.innerWidth < 768 ? 0.08 : 0.05,
+    vertexColors: true, transparent: true, opacity: 0.85,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+});
+
+const particles = new THREE.Points(geo, mat);
+scene.add(particles);
+
 function setShape(idx) {
     const shape = SHAPES[idx];
     const newPos = shape.gen(N);
     for (let i = 0; i < target.length; i++) target[i] = newPos[i];
- 
+
     document.getElementById('shape-name').textContent = shape.name;
     document.getElementById('shape-name').style.color = `#${shape.color.toString(16).padStart(6,'0')}`;
     document.getElementById('shape-name').style.textShadow = `0 0 30px #${shape.color.toString(16).padStart(6,'0')}`;
- 
+
     updateColors(shape.color);
     updateDots(idx);
- 
-    // Flash
+
     const flash = document.getElementById('flash');
     flash.classList.add('show');
     setTimeout(() => flash.classList.remove('show'), 150);
 }
- 
-// Shape dots
+
 const dotsContainer = document.getElementById('shape-dots');
 SHAPES.forEach((_, i) => {
     const d = document.createElement('div');
     d.className = 'dot' + (i === 0 ? ' active' : '');
     dotsContainer.appendChild(d);
 });
- 
+
 function updateDots(idx) {
-    document.querySelectorAll('.dot').forEach((d, i) => {
-        d.classList.toggle('active', i === idx);
-    });
+    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 }
- 
+
 // ============================================================
-// INPUT STATE
+// УМНАЯ МАТЕМАТИКА ЖЕСТОВ (НОВАЯ ВЕРСИЯ)
 // ============================================================
-let rotX = 0, rotY = 0; // target rotation
+// Рассчитывает 3D-расстояние между двумя точками (с учетом глубины Z)
+function getDistance3D(p1, p2) {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
+}
+
+let rotX = 0, rotY = 0;
 let handDetected = false;
 let isExploding = false;
-let cursorX = innerWidth/2, cursorY = innerHeight/2;
-let pinching = false;
-let lastPinch = 0;
-let lastGesture = '';
- 
+let pinching = false, lastPinch = 0;
 const handCursor = document.getElementById('hand-cursor');
- 
-// ============================================================
-// MEDIAPIPE HANDS
-// ============================================================
+
 const videoEl = document.getElementById('video-el');
 const overlayEl = document.getElementById('overlay');
 const overlayText = document.getElementById('overlay-text');
- 
 let handReady = false;
- 
-function dist2D(a, b) {
-    return Math.sqrt(Math.pow(a.x-b.x,2)+Math.pow(a.y-b.y,2));
-}
- 
-function isFist(lm) {
-    // Check if all fingers are curled
-    const tips = [8, 12, 16, 20]; // index, middle, ring, pinky tips
-    const mids = [6, 10, 14, 18]; // middle joints
-    let curled = 0;
-    for (let t = 0; t < tips.length; t++) {
-        if (lm[tips[t]].y > lm[mids[t]].y) curled++;
-    }
-    return curled >= 3;
-}
- 
+
 const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
- 
 handsMP.setOptions({
     maxNumHands: 1,
-    modelComplexity: window.innerWidth < 768 ? 0 : 1,
-    minDetectionConfidence: 0.6,
-    minTrackingConfidence: 0.6,
+    modelComplexity: window.innerWidth < 768 ? 0 : 1, // Оптимизация для мобилок
+    minDetectionConfidence: 0.7,
+    minTrackingConfidence: 0.7,
 });
- 
+
 handsMP.onResults(results => {
     if (!handReady) {
         handReady = true;
         overlayEl.classList.add('hidden');
     }
- 
+
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
         handDetected = false;
         handCursor.style.opacity = '0';
         return;
     }
- 
+
     handDetected = true;
     const lm = results.multiHandLandmarks[0];
-    const wrist = lm[9];
- 
-    // Mirror X (camera is mirrored)
-    const nx = (1 - wrist.x - 0.5) * 2;
-    const ny = -(wrist.y - 0.5) * 2;
+    const wrist = lm[0]; // Запястье
+    const middleBase = lm[9]; // Основание среднего пальца
+
+    // 1. ОПРЕДЕЛЯЕМ БАЗОВЫЙ РАЗМЕР ЛАДОНИ (чтобы жесты не зависели от расстояния до камеры)
+    const handSize = getDistance3D(wrist, middleBase);
+
+    // 2. УПРАВЛЕНИЕ ВРАЩЕНИЕМ (относительно центра экрана)
+    const nx = (1 - middleBase.x - 0.5) * 2;
+    const ny = -(middleBase.y - 0.5) * 2;
     rotX = ny * 2.5;
     rotY = nx * 2.5;
- 
-    // Move hand cursor
-    cursorX = (1 - wrist.x) * innerWidth;
-    cursorY = wrist.y * innerHeight;
-    handCursor.style.left = cursorX + 'px';
-    handCursor.style.top  = cursorY + 'px';
+
+    // Движение курсора
+    handCursor.style.left = ((1 - middleBase.x) * innerWidth) + 'px';
+    handCursor.style.top = (middleBase.y * innerHeight) + 'px';
     handCursor.style.opacity = '1';
- 
-    // Pinch detection
-    const d = dist2D(lm[4], lm[8]);
+
+    // 3. УМНЫЙ ЩИПОК (Отношение расстояния между пальцами к размеру ладони)
+    const pinchDist = getDistance3D(lm[4], lm[8]); // Большой и указательный
+    const pinchRatio = pinchDist / handSize;
+    
     const now = Date.now();
-    if (d < CONFIG.PINCH_THRESHOLD) {
+
+    if (pinchRatio < CONFIG.PINCH_THRESHOLD) {
         handCursor.classList.add('pinching');
-        if (!pinching && now - lastPinch > CONFIG.PINCH_COOLDOWN) {
+        handCursor.classList.remove('fist');
+        
+        if (!pinching && now - lastPinch > CONFIG.PINCH_COOLDOWN && !isExploding) {
             pinching = true;
             lastPinch = now;
             currentShape = (currentShape + 1) % SHAPES.length;
@@ -573,14 +353,26 @@ handsMP.onResults(results => {
         pinching = false;
         handCursor.classList.remove('pinching');
     }
- 
-    // Fist detection — explosion burst
-    if (isFist(lm) && !isExploding) {
-        triggerExplosion();
+
+    // 4. УМНЫЙ КУЛАК (Независимо от поворота руки)
+    // Проверяем расстояние от кончиков пальцев до запястья. 
+    // Если рука сжата, кончики близки к запястью.
+    const tip8 = getDistance3D(lm[8], wrist) / handSize;
+    const tip12 = getDistance3D(lm[12], wrist) / handSize;
+    const tip16 = getDistance3D(lm[16], wrist) / handSize;
+    const tip20 = getDistance3D(lm[20], wrist) / handSize;
+
+    // Если все пальцы согнуты (расстояние до запястья меньше порога)
+    if (tip8 < CONFIG.FIST_THRESHOLD && tip12 < CONFIG.FIST_THRESHOLD && 
+        tip16 < CONFIG.FIST_THRESHOLD && tip20 < CONFIG.FIST_THRESHOLD) {
+        
+        handCursor.classList.add('fist');
+        if (!isExploding) triggerExplosion();
+    } else {
+        handCursor.classList.remove('fist');
     }
 });
- 
-// Start camera
+
 async function startCamera() {
     try {
         const cameraMP = new Camera(videoEl, {
@@ -590,133 +382,69 @@ async function startCamera() {
         await cameraMP.start();
         overlayText.textContent = 'ОЖИДАНИЕ РУКИ...';
     } catch(e) {
-        // Camera not available — fallback to mouse
         overlayEl.classList.add('hidden');
         document.getElementById('cam-preview').style.display = 'none';
     }
 }
- 
 startCamera();
- 
+
 // ============================================================
-// EXPLOSION EFFECT
+// ЭФФЕКТ ВЗРЫВА (Улучшенная физика)
 // ============================================================
 function triggerExplosion() {
     isExploding = true;
-    const pArr = geo.attributes.position.array;
     for (let i = 0; i < N; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const elev  = (Math.random()-0.5) * Math.PI;
-        const speed = 0.5 + Math.random() * 0.8;
-        velocity[i*3]   = Math.cos(angle)*Math.cos(elev)*speed;
+        const elev = (Math.random()-0.5) * Math.PI;
+        const speed = 1.5 + Math.random() * 2.5; // Сделал взрыв мощнее
+        velocity[i*3] = Math.cos(angle)*Math.cos(elev)*speed;
         velocity[i*3+1] = Math.sin(elev)*speed;
         velocity[i*3+2] = Math.sin(angle)*Math.cos(elev)*speed;
     }
+    
+    // Цвет взрыва (Красный/Желтый)
+    updateColors(0xff4400);
+
     setTimeout(() => {
         isExploding = false;
-        // Snap back to current shape
+        // Возвращаем цвет текущей формы
+        updateColors(SHAPES[currentShape].color);
         const s = SHAPES[currentShape].gen(N);
         for (let i = 0; i < target.length; i++) target[i] = s[i];
-        for (let i = 0; i < velocity.length; i++) velocity[i] = 0;
-    }, 1200);
+    }, 1500);
 }
- 
+
 // ============================================================
-// MOUSE / TOUCH FALLBACK
-// ============================================================
-let mouseActive = false;
-let lastClick = 0;
- 
-document.addEventListener('mousemove', e => {
-    if (handDetected) return;
-    const nx = (e.clientX / innerWidth - 0.5) * 2;
-    const ny = -(e.clientY / innerHeight - 0.5) * 2;
-    rotX = ny * 2;
-    rotY = nx * 2;
-    cursorX = e.clientX; cursorY = e.clientY;
-    handCursor.style.left = cursorX+'px';
-    handCursor.style.top  = cursorY+'px';
-    handCursor.style.opacity = '0.5';
-});
- 
-document.addEventListener('click', e => {
-    if (handDetected) return;
-    const now = Date.now();
-    if (now - lastClick < 800) return;
-    lastClick = now;
-    currentShape = (currentShape+1) % SHAPES.length;
-    setShape(currentShape);
-});
- 
-document.addEventListener('touchmove', e => {
-    if (handDetected) return;
-    e.preventDefault();
-    const t = e.touches[0];
-    const nx = (t.clientX / innerWidth - 0.5) * 2;
-    const ny = -(t.clientY / innerHeight - 0.5) * 2;
-    rotX = ny * 2;
-    rotY = nx * 2;
-}, { passive: false });
- 
-document.addEventListener('touchend', e => {
-    if (handDetected) return;
-    const now = Date.now();
-    if (now - lastClick < 800) return;
-    lastClick = now;
-    currentShape = (currentShape+1) % SHAPES.length;
-    setShape(currentShape);
-});
- 
-// Keyboard
-document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === ' ') {
-        currentShape = (currentShape+1) % SHAPES.length;
-        setShape(currentShape);
-    }
-    if (e.key === 'ArrowLeft') {
-        currentShape = (currentShape - 1 + SHAPES.length) % SHAPES.length;
-        setShape(currentShape);
-    }
-    if (e.key === 'e' || e.key === 'E') triggerExplosion();
-});
- 
-// ============================================================
-// ANIMATION LOOP
+// АНИМАЦИЯ И РЕНДЕР
 // ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
- 
+
 function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
     const elapsed = clock.getElapsedTime();
- 
-    // FPS counter
-    frames++;
-    fpsTime += delta;
-    if (fpsTime >= 1) {
-        document.getElementById('fps-counter').textContent = frames;
-        frames = 0; fpsTime = 0;
-    }
- 
-    // Rotate toward target
+
+    // FPS
+    frames++; fpsTime += delta;
+    if (fpsTime >= 1) { document.getElementById('fps-counter').textContent = frames; frames = 0; fpsTime = 0; }
+
+    // Плавное вращение
     particles.rotation.x += (rotX - particles.rotation.x) * CONFIG.LERP_ROTATION;
     particles.rotation.y += (rotY - particles.rotation.y) * CONFIG.LERP_ROTATION;
-    // Slow auto-spin on Z
-    particles.rotation.z = elapsed * CONFIG.AUTO_ROTATE_SPEED * (handDetected ? 0.3 : 1);
- 
-    // Morph particles toward target
+    particles.rotation.z = elapsed * CONFIG.AUTO_ROTATE_SPEED * (handDetected ? 0.2 : 1);
+
     const pArr = geo.attributes.position.array;
- 
+
     if (isExploding) {
         for (let i = 0; i < N; i++) {
-            pArr[i*3]   += velocity[i*3]   * delta * 60;
-            pArr[i*3+1] += velocity[i*3+1] * delta * 60;
-            pArr[i*3+2] += velocity[i*3+2] * delta * 60;
-            // Apply drag
-            velocity[i*3]   *= 0.97;
-            velocity[i*3+1] *= 0.97;
-            velocity[i*3+2] *= 0.97;
+            pArr[i*3] += velocity[i*3] * delta * 20;
+            pArr[i*3+1] += velocity[i*3+1] * delta * 20;
+            pArr[i*3+2] += velocity[i*3+2] * delta * 20;
+            // Инерция (замедление частиц)
+            velocity[i*3] *= 0.92;
+            velocity[i*3+1] *= 0.92;
+            velocity[i*3+2] *= 0.92;
         }
     } else {
         for (let i = 0; i < pArr.length; i++) {
@@ -724,18 +452,17 @@ function animate() {
         }
     }
     geo.attributes.position.needsUpdate = true;
- 
+
     renderer.render(scene, camThree);
 }
- 
+
 window.addEventListener('resize', () => {
     camThree.aspect = innerWidth / innerHeight;
     camThree.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
 });
- 
+
 animate();
 </script>
 </body>
 </html>
- 
