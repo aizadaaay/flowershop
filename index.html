@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✋ Hand Particle Universe 2.0</title>
+    <title>✋ Hand Particle Universe 3.0</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -11,7 +11,7 @@
             background: #000;
             overflow: hidden;
             font-family: 'Courier New', monospace;
-            touch-action: none; /* Блокирует стандартный скролл на мобилках */
+            touch-action: none;
             user-select: none;
         }
 
@@ -76,9 +76,10 @@
             position: fixed; bottom: 16px; left: 16px;
             z-index: 10; pointer-events: none;
             display: flex; flex-direction: column; gap: 6px;
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;
         }
         .gesture-item {
-            font-size: 11px; color: rgba(255,255,255,0.4);
+            font-size: 11px; color: rgba(255,255,255,0.7);
             letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px;
         }
         .gesture-icon { font-size: 16px; }
@@ -120,12 +121,6 @@
             border-color: #ff4444; box-shadow: 0 0 20px #ff4444;
             transform: translate(-50%, -50%) scale(1.5); border-radius: 4px;
         }
-
-        #mouse-fallback {
-            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-            font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.15em;
-            z-index: 10; pointer-events: none; text-align: center; line-height: 1.6;
-        }
     </style>
 </head>
 <body>
@@ -154,14 +149,10 @@
 </div>
 
 <div id="gesture-guide">
-    <div class="gesture-item"><span class="gesture-icon">✋</span> ДВИЖЕНИЕ = ВРАЩЕНИЕ</div>
+    <div class="gesture-item"><span class="gesture-icon">✋</span> ВРАЩЕНИЕ И ВЫСОТА</div>
+    <div class="gesture-item"><span class="gesture-icon">👐</span> ДВЕ РУКИ = МАСШТАБ</div>
     <div class="gesture-item"><span class="gesture-icon">🤏</span> ЩИПОК = ФОРМА</div>
     <div class="gesture-item"><span class="gesture-icon">✊</span> КУЛАК = ВЗРЫВ</div>
-</div>
-
-<div id="mouse-fallback">
-    НЕТ КАМЕРЫ?<br>
-    КАСАНИЕ = ФОРМА | ДВОЙНОЕ = ВЗРЫВ
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -170,7 +161,7 @@
 
 <script>
 // ============================================================
-// КОНФИГ
+// КОНФИГ И ПЕРЕМЕННЫЕ
 // ============================================================
 const CONFIG = {
     PARTICLE_COUNT: window.innerWidth < 768 ? 2500 : 5000,
@@ -181,6 +172,10 @@ const CONFIG = {
     PINCH_COOLDOWN: 1000,
     AUTO_ROTATE_SPEED: 0.1,
 };
+
+// Новые переменные для положения и масштаба
+let targetPosY = 0; 
+let targetScale = 1;
 
 // ============================================================
 // ГЕНЕРАТОРЫ ФОРМ
@@ -302,9 +297,6 @@ function updateDots(idx) {
     document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
 }
 
-// ============================================================
-// УПРАВЛЕНИЕ МЫШЬЮ И КАСАНИЯМИ
-// ============================================================
 let rotX = 0, rotY = 0;
 let handDetected = false;
 let isExploding = false;
@@ -320,14 +312,9 @@ window.addEventListener('pointermove', (e) => {
 
 window.addEventListener('pointerdown', (e) => {
     if (handDetected || isExploding) return;
-    
     const now = Date.now();
-    if (now - lastClickTime < 300) {
-        triggerExplosion();
-    } else {
-        currentShape = (currentShape + 1) % SHAPES.length;
-        setShape(currentShape);
-    }
+    if (now - lastClickTime < 300) { triggerExplosion(); } 
+    else { currentShape = (currentShape + 1) % SHAPES.length; setShape(currentShape); }
     lastClickTime = now;
 });
 
@@ -347,7 +334,7 @@ let handReady = false;
 
 const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
 handsMP.setOptions({
-    maxNumHands: 1,
+    maxNumHands: 2, // Теперь нейросеть ищет ДВЕ руки
     modelComplexity: window.innerWidth < 768 ? 0 : 1,
     minDetectionConfidence: 0.7,
     minTrackingConfidence: 0.7,
@@ -362,34 +349,41 @@ handsMP.onResults(results => {
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
         handDetected = false;
         handCursor.style.opacity = '0';
+        // Если рук нет, плавно возвращаем модель в центр и нормальный размер
+        targetPosY = 0;
+        targetScale = 1;
         return;
     }
 
     handDetected = true;
-    const lm = results.multiHandLandmarks[0];
+    const lm = results.multiHandLandmarks[0]; // Основная (первая) рука
     const wrist = lm[0];
     const middleBase = lm[9];
-
     const handSize = getDistance3D(wrist, middleBase);
 
+    // Вращение (Осталось как было)
     const nx = (1 - middleBase.x - 0.5) * 2;
     const ny = -(middleBase.y - 0.5) * 2;
     rotX = ny * 2.5;
     rotY = nx * 2.5;
 
+    // --- ИНВЕРТИРОВАННОЕ ВЕРТИКАЛЬНОЕ ДВИЖЕНИЕ ---
+    // В MediaPipe y=1 это низ экрана. Если рука внизу (1), targetPosY будет положительным (+), а в 3D это верх!
+    targetPosY = (middleBase.y - 0.5) * 12.0; 
+
+    // Обновляем курсор для основной руки
     handCursor.style.left = ((1 - middleBase.x) * innerWidth) + 'px';
     handCursor.style.top = (middleBase.y * innerHeight) + 'px';
     handCursor.style.opacity = '1';
 
+    // Жесты щипка и кулака для первой руки
     const pinchDist = getDistance3D(lm[4], lm[8]); 
     const pinchRatio = pinchDist / handSize;
-    
     const now = Date.now();
 
     if (pinchRatio < CONFIG.PINCH_THRESHOLD) {
         handCursor.classList.add('pinching');
         handCursor.classList.remove('fist');
-        
         if (!pinching && now - lastPinch > CONFIG.PINCH_COOLDOWN && !isExploding) {
             pinching = true;
             lastPinch = now;
@@ -408,11 +402,31 @@ handsMP.onResults(results => {
 
     if (tip8 < CONFIG.FIST_THRESHOLD && tip12 < CONFIG.FIST_THRESHOLD && 
         tip16 < CONFIG.FIST_THRESHOLD && tip20 < CONFIG.FIST_THRESHOLD) {
-        
         handCursor.classList.add('fist');
         if (!isExploding) triggerExplosion();
     } else {
         handCursor.classList.remove('fist');
+    }
+
+    // --- МАСШТАБ ДВУМЯ РУКАМИ ---
+    if (results.multiHandLandmarks.length === 2) {
+        const wrist1 = results.multiHandLandmarks[0][0];
+        const wrist2 = results.multiHandLandmarks[1][0];
+        
+        // Считаем дистанцию между двумя запястьями (от 0 до ~1.0)
+        const dx = wrist1.x - wrist2.x;
+        const dy = wrist1.y - wrist2.y;
+        const dist2D = Math.sqrt(dx * dx + dy * dy);
+        
+        // Переводим дистанцию между руками в масштаб модели. 
+        // Если руки близко (dist ~ 0.1), масштаб меньше 1. Если далеко, больше 1.
+        targetScale = 0.4 + (dist2D * 2.5);
+        
+        // Ограничиваем, чтобы не улетело в космос
+        targetScale = Math.max(0.4, Math.min(targetScale, 3.0));
+    } else {
+        // Если рука одна, масштаб плавно возвращается в норму
+        targetScale = 1.0; 
     }
 });
 
@@ -444,7 +458,6 @@ function triggerExplosion() {
         velocity[i*3+1] = Math.sin(elev)*speed;
         velocity[i*3+2] = Math.sin(angle)*Math.cos(elev)*speed;
     }
-    
     updateColors(0xff4400);
 
     setTimeout(() => {
@@ -456,7 +469,7 @@ function triggerExplosion() {
 }
 
 // ============================================================
-// АНИМАЦИЯ И РЕНДЕР С ЭФФЕКТОМ "ДЫХАНИЯ"
+// АНИМАЦИЯ И РЕНДЕР
 // ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
@@ -469,9 +482,19 @@ function animate() {
     frames++; fpsTime += delta;
     if (fpsTime >= 1) { document.getElementById('fps-counter').textContent = frames; frames = 0; fpsTime = 0; }
 
+    // Плавное вращение
     particles.rotation.x += (rotX - particles.rotation.x) * CONFIG.LERP_ROTATION;
     particles.rotation.y += (rotY - particles.rotation.y) * CONFIG.LERP_ROTATION;
     particles.rotation.z = elapsed * CONFIG.AUTO_ROTATE_SPEED * (handDetected ? 0.2 : 1);
+
+    // --- ПРИМЕНЯЕМ ВЫСОТУ И МАСШТАБ ---
+    // Плавное перемещение вверх/вниз
+    particles.position.y += (targetPosY - particles.position.y) * 0.08;
+    
+    // Плавное изменение размера (зум двумя руками)
+    const currentScale = particles.scale.x;
+    const nextScale = currentScale + (targetScale - currentScale) * 0.08;
+    particles.scale.set(nextScale, nextScale, nextScale);
 
     const pArr = geo.attributes.position.array;
 
@@ -485,9 +508,7 @@ function animate() {
             velocity[i*3+2] *= 0.92;
         }
     } else {
-        // Эффект плавного дыхания (колебания)
         const time = elapsed * 1.2; 
-        
         for (let i = 0; i < N; i++) {
             const offsetX = Math.sin(time + i * 0.05) * 0.15;
             const offsetY = Math.cos(time + i * 0.05) * 0.15;
