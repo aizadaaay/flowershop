@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✋ Hand Particle Universe 4.0</title>
+    <title>✋ Hand Particle Universe 4.0 - PRO</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -77,9 +77,10 @@
             z-index: 10; pointer-events: none;
             display: flex; flex-direction: column; gap: 6px;
             background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;
+            backdrop-filter: blur(4px); /* Добавлено размытие для красоты */
         }
         .gesture-item {
-            font-size: 11px; color: rgba(255,255,255,0.7);
+            font-size: 11px; color: rgba(255,255,255,0.8);
             letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px;
         }
         .gesture-icon { font-size: 16px; }
@@ -91,36 +92,39 @@
         }
         .dot {
             width: 6px; height: 6px; border-radius: 50%;
-            background: rgba(255,255,255,0.2); transition: all 0.4s;
+            background: rgba(255,255,255,0.2); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .dot.active {
-            background: #fff; box-shadow: 0 0 8px #fff; transform: scale(1.5);
+            background: #fff; box-shadow: 0 0 10px #fff; transform: scale(1.8);
         }
 
-        /* Pinch flash effect */
+        /* Flash effect */
         #flash {
             position: fixed; inset: 0; background: #fff; opacity: 0;
-            pointer-events: none; z-index: 50; transition: opacity 0.1s;
+            pointer-events: none; z-index: 50; transition: opacity 0.15s ease-out;
         }
-        #flash.show { opacity: 0.15; }
+        #flash.show { opacity: 0.15; transition: none; }
 
         /* Hand cursor */
         #hand-cursor {
-            position: fixed; width: 24px; height: 24px;
-            border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+            position: fixed; width: 28px; height: 28px;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
             pointer-events: none; z-index: 20;
             transform: translate(-50%, -50%);
-            transition: border-color 0.2s, transform 0.1s, box-shadow 0.2s;
+            transition: border-color 0.2s, transform 0.15s ease-out, box-shadow 0.2s;
             mix-blend-mode: screen;
-            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+            box-shadow: 0 0 15px rgba(255,255,255,0.6);
+            /* Сглаживание движения курсора CSS */
+            transition-property: border-color, transform, box-shadow, left, top;
+            transition-duration: 0.1s; 
         }
         #hand-cursor.pinching {
-            border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff;
-            transform: translate(-50%, -50%) scale(0.5); border-width: 4px;
+            border-color: #ff00ff; box-shadow: 0 0 25px #ff00ff;
+            transform: translate(-50%, -50%) scale(0.4); border-width: 4px;
         }
         #hand-cursor.fist {
-            border-color: #ff4444; box-shadow: 0 0 20px #ff4444;
-            transform: translate(-50%, -50%) scale(1.5); border-radius: 4px;
+            border-color: #ff4444; box-shadow: 0 0 25px #ff4444;
+            transform: translate(-50%, -50%) scale(1.4); border-radius: 6px;
         }
     </style>
 </head>
@@ -138,7 +142,7 @@
     <div id="shape-name">ХАОС</div>
     <div id="particle-count">
         <span id="fps-counter">60</span> FPS<br>
-        <span id="p-count">5000</span> ЧАСТИЦ
+        <span id="p-count">0</span> ЧАСТИЦ
     </div>
 </div>
 
@@ -150,10 +154,10 @@
 </div>
 
 <div id="gesture-guide">
-    <div class="gesture-item"><span class="gesture-icon">🖐</span> ОТТАЛКИВАНИЕ (ОТКРЫТАЯ РУКА)</div>
-    <div class="gesture-item"><span class="gesture-icon">👐</span> ДВЕ РУКИ = МАСШТАБ</div>
-    <div class="gesture-item"><span class="gesture-icon">🤏</span> ЩИПОК = ФОРМА</div>
-    <div class="gesture-item"><span class="gesture-icon">✊</span> КУЛАК = ВЗРЫВ</div>
+    <div class="gesture-item"><span class="gesture-icon">🖐</span> ОТТАЛКИВАНИЕ (РУКА)</div>
+    <div class="gesture-item"><span class="gesture-icon">👐</span> МАСШТАБ (ДВЕ РУКИ)</div>
+    <div class="gesture-item"><span class="gesture-icon">🤏</span> СМЕНА ФОРМЫ (ЩИПОК)</div>
+    <div class="gesture-item"><span class="gesture-icon">✊</span> ВЗРЫВ (КУЛАК)</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -162,27 +166,32 @@
 
 <script>
 // ============================================================
-// КОНФИГ И ПЕРЕМЕННЫЕ
+// ОПТИМИЗИРОВАННЫЙ КОНФИГ
 // ============================================================
 const CONFIG = {
-    PARTICLE_COUNT: window.innerWidth < 768 ? 2500 : 5000,
-    LERP_MORPH: 0.05,
-    LERP_ROTATION: 0.08,
+    PARTICLE_COUNT: window.innerWidth < 768 ? 2000 : 4500, // Чуть снизили для стабильных 60fps
+    LERP_MORPH: 0.06,      // Скорость смены формы
+    LERP_ROTATION: 0.08,   // Плавность вращения
     PINCH_THRESHOLD: 0.25, 
     FIST_THRESHOLD: 1.1, 
     PINCH_COOLDOWN: 1000,
     AUTO_ROTATE_SPEED: 0.1,
-    REPULSION_RADIUS: 3.5, // Радиус "силового поля"
-    REPULSION_FORCE: 5.0   // Сила отталкивания
+    REPULSION_RADIUS: 4.0, // Увеличен радиус для красоты
+    REPULSION_FORCE: 6.0,  
+    HAND_SMOOTHING: 0.2    // Коэффициент плавности движения руки
 };
 
 let targetPosY = 0; 
 let targetScale = 1;
+let currentScale = 1;
+
+// Для плавного слежения за рукой (Сглаживание)
+const targetHandWorldPos = new THREE.Vector3(999, 999, 999);
 const handWorldPos = new THREE.Vector3(999, 999, 999);
 let isRepelling = false;
 
 // ============================================================
-// ГЕНЕРАТОРЫ ФОРМ
+// ГЕНЕРАТОРЫ ФОРМ (Оставлены без изменений)
 // ============================================================
 const SHAPES = [
     { name: 'ХАОС', color: 0x00ffff, gen: genRandom },
@@ -216,20 +225,32 @@ function genDNA(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ cons
 function genHeart(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(Math.random()*2-1)*Math.PI, sc=0.9; const x=16*Math.pow(Math.sin(t),3), y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t), z=(Math.random()-0.5)*2; a[i*3]=x*sc*0.25; a[i*3+1]=y*sc*0.25; a[i*3+2]=z; } return a; }
 
 // ============================================================
-// THREE.JS ИНИЦИАЛИЗАЦИЯ
+// ИНИЦИАЛИЗАЦИЯ THREE.JS И КАЧЕСТВО ГРАФИКИ
 // ============================================================
 const scene = new THREE.Scene();
 const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
 
-function updateCameraPosition() {
-    camThree.position.z = window.innerWidth < 768 ? 14 : 9;
-}
+function updateCameraPosition() { camThree.position.z = window.innerWidth < 768 ? 14 : 9; }
 updateCameraPosition();
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
 renderer.setSize(innerWidth, innerHeight);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// ГЕНЕРАЦИЯ МЯГКОЙ КРУГЛОЙ ТЕКСТУРЫ (Для красивых частиц)
+function createCircleTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 32; canvas.height = 32;
+    const context = canvas.getContext('2d');
+    const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.5, 'rgba(255,255,255,0.8)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 32, 32);
+    return new THREE.CanvasTexture(canvas);
+}
 
 const N = CONFIG.PARTICLE_COUNT;
 document.getElementById('p-count').textContent = N;
@@ -256,15 +277,23 @@ function updateColors(hex) {
 
 updateColors(0x00ffff);
 
+// ПРИМЕНЯЕМ КРУГЛУЮ ТЕКСТУРУ
 const mat = new THREE.PointsMaterial({
-    size: window.innerWidth < 768 ? 0.08 : 0.05,
-    vertexColors: true, transparent: true, opacity: 0.85,
-    blending: THREE.AdditiveBlending, depthWrite: false,
+    size: window.innerWidth < 768 ? 0.15 : 0.1, // Чуть больше размер из-за мягких краев
+    map: createCircleTexture(),
+    vertexColors: true, 
+    transparent: true, 
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending, 
+    depthWrite: false,
 });
 
 const particles = new THREE.Points(geo, mat);
 scene.add(particles);
 
+// ============================================================
+// ЛОГИКА ИНТЕРФЕЙСА
+// ============================================================
 function setShape(idx) {
     const shape = SHAPES[idx];
     const newPos = shape.gen(N);
@@ -279,7 +308,7 @@ function setShape(idx) {
 
     const flash = document.getElementById('flash');
     flash.classList.add('show');
-    setTimeout(() => flash.classList.remove('show'), 150);
+    requestAnimationFrame(() => setTimeout(() => flash.classList.remove('show'), 100));
 }
 
 const dotsContainer = document.getElementById('shape-dots');
@@ -298,7 +327,7 @@ let handDetected = false;
 let isExploding = false;
 let lastClickTime = 0;
 
-// Управление мышью (с отталкиванием)
+// Управление мышью
 window.addEventListener('pointermove', (e) => {
     if (handDetected) return; 
     const nx = (e.clientX / innerWidth - 0.5) * 2;
@@ -306,12 +335,12 @@ window.addEventListener('pointermove', (e) => {
     rotX = ny * 1.5;
     rotY = nx * 1.5;
     
-    // Проецируем курсор мыши в 3D для силового поля
     const vec = new THREE.Vector3(nx, ny, 0.5);
     vec.unproject(camThree);
     const dir = vec.sub(camThree.position).normalize();
     const distance = -camThree.position.z / dir.z;
-    handWorldPos.copy(camThree.position).add(dir.multiplyScalar(distance));
+    
+    targetHandWorldPos.copy(camThree.position).add(dir.multiplyScalar(distance));
     isRepelling = true;
 
     handCursor.style.left = e.clientX + 'px';
@@ -320,7 +349,6 @@ window.addEventListener('pointermove', (e) => {
 });
 
 window.addEventListener('pointerleave', () => { isRepelling = false; handCursor.style.opacity = '0'; });
-
 window.addEventListener('pointerdown', (e) => {
     if (handDetected || isExploding) return;
     const now = Date.now();
@@ -333,22 +361,21 @@ window.addEventListener('pointerdown', (e) => {
 // УПРАВЛЕНИЕ РУКОЙ (MEDIAPIPE)
 // ============================================================
 function getDistance3D(p1, p2) {
-    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
+    return Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2 + (p1.z-p2.z)**2);
 }
 
 let pinching = false, lastPinch = 0;
 const handCursor = document.getElementById('hand-cursor');
 const videoEl = document.getElementById('video-el');
 const overlayEl = document.getElementById('overlay');
-const overlayText = document.getElementById('overlay-text');
 let handReady = false;
 
 const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
 handsMP.setOptions({
     maxNumHands: 2,
-    modelComplexity: window.innerWidth < 768 ? 0 : 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7,
+    modelComplexity: window.innerWidth < 768 ? 0 : 1, // Оптимизация для мобилок
+    minDetectionConfidence: 0.65,
+    minTrackingConfidence: 0.65,
 });
 
 handsMP.onResults(results => {
@@ -369,75 +396,65 @@ handsMP.onResults(results => {
     handDetected = true;
     const lm = results.multiHandLandmarks[0]; 
     const wrist = lm[0];
-    const middleBase = lm[9]; // Центр ладони
+    const middleBase = lm[9]; 
     const handSize = getDistance3D(wrist, middleBase);
 
-    // Вращение и высота
     const nx = (1 - middleBase.x - 0.5) * 2;
     const ny = -(middleBase.y - 0.5) * 2;
     rotX = ny * 2.5;
     rotY = nx * 2.5;
     targetPosY = (middleBase.y - 0.5) * 12.0; 
 
-    // Обновляем курсор для основной руки
+    // Сглаженное обновление позиции курсора через CSS transitions
     handCursor.style.left = ((1 - middleBase.x) * innerWidth) + 'px';
     handCursor.style.top = (middleBase.y * innerHeight) + 'px';
     handCursor.style.opacity = '1';
 
-    // Проецируем координаты руки в 3D мир (Магия силового поля)
     const vec = new THREE.Vector3(nx, ny, 0.5);
     vec.unproject(camThree);
     const dir = vec.sub(camThree.position).normalize();
     const distance = -camThree.position.z / dir.z;
-    handWorldPos.copy(camThree.position).add(dir.multiplyScalar(distance));
+    
+    // Пишем в target, а сама рука будет плавно догонять его в функции animate
+    targetHandWorldPos.copy(camThree.position).add(dir.multiplyScalar(distance));
 
-    // Жесты щипка и кулака
     const pinchDist = getDistance3D(lm[4], lm[8]); 
     const pinchRatio = pinchDist / handSize;
     const now = Date.now();
 
-    const tip8 = getDistance3D(lm[8], wrist) / handSize;
-    const tip12 = getDistance3D(lm[12], wrist) / handSize;
-    const tip16 = getDistance3D(lm[16], wrist) / handSize;
-    const tip20 = getDistance3D(lm[20], wrist) / handSize;
-    const isFist = (tip8 < CONFIG.FIST_THRESHOLD && tip12 < CONFIG.FIST_THRESHOLD && tip16 < CONFIG.FIST_THRESHOLD && tip20 < CONFIG.FIST_THRESHOLD);
+    const isFist = (
+        getDistance3D(lm[8], wrist)/handSize < CONFIG.FIST_THRESHOLD && 
+        getDistance3D(lm[12], wrist)/handSize < CONFIG.FIST_THRESHOLD && 
+        getDistance3D(lm[16], wrist)/handSize < CONFIG.FIST_THRESHOLD && 
+        getDistance3D(lm[20], wrist)/handSize < CONFIG.FIST_THRESHOLD
+    );
 
     if (pinchRatio < CONFIG.PINCH_THRESHOLD) {
         handCursor.classList.add('pinching');
         handCursor.classList.remove('fist');
-        isRepelling = false; // Отключаем поле при щипке
+        isRepelling = false; 
         if (!pinching && now - lastPinch > CONFIG.PINCH_COOLDOWN && !isExploding) {
-            pinching = true;
-            lastPinch = now;
-            currentShape = (currentShape + 1) % SHAPES.length;
-            setShape(currentShape);
+            pinching = true; lastPinch = now;
+            currentShape = (currentShape + 1) % SHAPES.length; setShape(currentShape);
         }
     } else {
-        pinching = false;
-        handCursor.classList.remove('pinching');
+        pinching = false; handCursor.classList.remove('pinching');
     }
 
     if (isFist) {
         handCursor.classList.add('fist');
-        isRepelling = false; // Отключаем поле при кулаке
+        isRepelling = false; 
         if (!isExploding) triggerExplosion();
     } else {
         handCursor.classList.remove('fist');
     }
 
-    // Если рука просто открыта, включаем отталкивание
-    if (!pinching && !isFist) {
-        isRepelling = true;
-    }
+    if (!pinching && !isFist) isRepelling = true;
 
-    // Масштаб двумя руками
     if (results.multiHandLandmarks.length === 2) {
-        const wrist1 = results.multiHandLandmarks[0][0];
-        const wrist2 = results.multiHandLandmarks[1][0];
-        const dx = wrist1.x - wrist2.x;
-        const dy = wrist1.y - wrist2.y;
-        targetScale = 0.4 + (Math.sqrt(dx * dx + dy * dy) * 2.5);
-        targetScale = Math.max(0.4, Math.min(targetScale, 3.0));
+        const dx = results.multiHandLandmarks[0][0].x - results.multiHandLandmarks[1][0].x;
+        const dy = results.multiHandLandmarks[0][0].y - results.multiHandLandmarks[1][0].y;
+        targetScale = Math.max(0.4, Math.min(0.4 + (Math.sqrt(dx*dx + dy*dy) * 2.5), 3.0));
     } else {
         targetScale = 1.0; 
     }
@@ -450,7 +467,7 @@ async function startCamera() {
             width: 640, height: 480
         });
         await cameraMP.start();
-        overlayText.textContent = 'ОЖИДАНИЕ РУКИ...';
+        document.getElementById('overlay-text').textContent = 'ОЖИДАНИЕ РУКИ...';
     } catch(e) {
         overlayEl.classList.add('hidden');
         document.getElementById('cam-preview').style.display = 'none';
@@ -482,7 +499,7 @@ function triggerExplosion() {
 }
 
 // ============================================================
-// АНИМАЦИЯ И РЕНДЕР
+// АНИМАЦИЯ И РЕНДЕР (ОПТИМИЗИРОВАННЫЙ ЦИКЛ)
 // ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
@@ -495,63 +512,68 @@ function animate() {
     frames++; fpsTime += delta;
     if (fpsTime >= 1) { document.getElementById('fps-counter').textContent = frames; frames = 0; fpsTime = 0; }
 
+    // Плавное слежение руки за таргетом (Убирает дрожание)
+    handWorldPos.lerp(targetHandWorldPos, CONFIG.HAND_SMOOTHING);
+
     particles.rotation.x += (rotX - particles.rotation.x) * CONFIG.LERP_ROTATION;
     particles.rotation.y += (rotY - particles.rotation.y) * CONFIG.LERP_ROTATION;
     particles.rotation.z = elapsed * CONFIG.AUTO_ROTATE_SPEED * (handDetected ? 0.2 : 1);
 
     particles.position.y += (targetPosY - particles.position.y) * 0.08;
-    const currentScale = particles.scale.x;
-    const nextScale = currentScale + (targetScale - currentScale) * 0.08;
-    particles.scale.set(nextScale, nextScale, nextScale);
+    currentScale += (targetScale - currentScale) * 0.08;
+    particles.scale.set(currentScale, currentScale, currentScale);
 
     const pArr = geo.attributes.position.array;
-
-    // Переводим глобальные координаты руки во внутреннюю систему координат модели (чтобы поле крутилось вместе с моделью)
     const localHandPos = handWorldPos.clone();
     particles.worldToLocal(localHandPos);
 
+    // Кешируем переменные до цикла, чтобы не нагружать процессор
+    const time = elapsed * 1.2; 
+    const radSq = CONFIG.REPULSION_RADIUS * CONFIG.REPULSION_RADIUS;
+    const lX = localHandPos.x, lY = localHandPos.y, lZ = localHandPos.z;
+    const repForce = CONFIG.REPULSION_FORCE;
+    const repRad = CONFIG.REPULSION_RADIUS;
+    const lerpM = CONFIG.LERP_MORPH;
+
     if (isExploding) {
         for (let i = 0; i < N; i++) {
-            pArr[i*3] += velocity[i*3] * delta * 20;
-            pArr[i*3+1] += velocity[i*3+1] * delta * 20;
-            pArr[i*3+2] += velocity[i*3+2] * delta * 20;
-            velocity[i*3] *= 0.92;
-            velocity[i*3+1] *= 0.92;
-            velocity[i*3+2] *= 0.92;
+            const idx3 = i * 3;
+            pArr[idx3]   += velocity[idx3] * delta * 20;
+            pArr[idx3+1] += velocity[idx3+1] * delta * 20;
+            pArr[idx3+2] += velocity[idx3+2] * delta * 20;
+            velocity[idx3]   *= 0.92;
+            velocity[idx3+1] *= 0.92;
+            velocity[idx3+2] *= 0.92;
         }
     } else {
-        const time = elapsed * 1.2; 
-        const radSq = CONFIG.REPULSION_RADIUS * CONFIG.REPULSION_RADIUS;
-
         for (let i = 0; i < N; i++) {
+            const idx3 = i * 3;
             const offsetX = Math.sin(time + i * 0.05) * 0.15;
             const offsetY = Math.cos(time + i * 0.05) * 0.15;
             const offsetZ = Math.sin(time + i * 0.03) * 0.15;
 
-            let tx = target[i*3] + offsetX;
-            let ty = target[i*3 + 1] + offsetY;
-            let tz = target[i*3 + 2] + offsetZ;
+            let tx = target[idx3]   + offsetX;
+            let ty = target[idx3+1] + offsetY;
+            let tz = target[idx3+2] + offsetZ;
 
-            // --- МАГИЯ ОТТАЛКИВАНИЯ ---
             if (isRepelling) {
-                const dx = pArr[i*3] - localHandPos.x;
-                const dy = pArr[i*3+1] - localHandPos.y;
-                const dz = pArr[i*3+2] - localHandPos.z;
+                const dx = pArr[idx3] - lX;
+                const dy = pArr[idx3+1] - lY;
+                const dz = pArr[idx3+2] - lZ;
                 const distSq = dx*dx + dy*dy + dz*dz;
 
                 if (distSq < radSq) {
                     const dist = Math.sqrt(distSq);
-                    const force = (CONFIG.REPULSION_RADIUS - dist) / CONFIG.REPULSION_RADIUS;
-                    
-                    tx += (dx / dist) * force * CONFIG.REPULSION_FORCE;
-                    ty += (dy / dist) * force * CONFIG.REPULSION_FORCE;
-                    tz += (dz / dist) * force * CONFIG.REPULSION_FORCE;
+                    const force = (repRad - dist) / repRad;
+                    tx += (dx / dist) * force * repForce;
+                    ty += (dy / dist) * force * repForce;
+                    tz += (dz / dist) * force * repForce;
                 }
             }
 
-            pArr[i*3]     += (tx - pArr[i*3])     * CONFIG.LERP_MORPH;
-            pArr[i*3 + 1] += (ty - pArr[i*3 + 1]) * CONFIG.LERP_MORPH;
-            pArr[i*3 + 2] += (tz - pArr[i*3 + 2]) * CONFIG.LERP_MORPH;
+            pArr[idx3]   += (tx - pArr[idx3])   * lerpM;
+            pArr[idx3+1] += (ty - pArr[idx3+1]) * lerpM;
+            pArr[idx3+2] += (tz - pArr[idx3+2]) * lerpM;
         }
     }
     geo.attributes.position.needsUpdate = true;
