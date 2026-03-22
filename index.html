@@ -3,112 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✋ Hand Particle Universe 5.0 - ULTIMATE</title>
+    <title>✋ Hand Particle Universe 6.0 - CUSTOM MODE</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --glass-bg: rgba(10, 10, 12, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-blur: blur(20px);
+            --glass-bg: rgba(10, 10, 12, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-blur: blur(16px);
             --text-main: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.6);
             --accent: #00ffff;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: #020202;
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-            touch-action: none; user-select: none; color: var(--text-main);
-        }
-
+        body { background: #020202; overflow: hidden; font-family: 'Inter', sans-serif; touch-action: none; user-select: none; color: var(--text-main); }
         #canvas-container { position: fixed; inset: 0; z-index: 1; }
 
         .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border); border-radius: 12px;
         }
 
+        /* Верхний HUD */
         #hud {
-            position: fixed; top: 0; left: 0; right: 0;
-            padding: 24px; display: flex; justify-content: space-between;
-            align-items: flex-start; pointer-events: none; z-index: 10;
+            position: fixed; top: 0; left: 0; right: 0; padding: 20px;
+            display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none;
         }
 
-        #hud-left { padding: 12px 24px; display: flex; align-items: center; justify-content: center; }
-        
-        #shape-name {
-            font-size: clamp(16px, 3vw, 22px); 
-            font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;
-            transition: color 0.6s, text-shadow 0.6s;
+        #hud-left { padding: 12px 24px; pointer-events: auto; }
+        #shape-name { font-size: 20px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; transition: color 0.3s; }
+
+        /* Панель управления (Текст и Модели) */
+        .control-group { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; gap: 8px; }
+        input[type="text"] {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); color: white;
+            padding: 8px 12px; border-radius: 6px; font-family: 'Inter'; outline: none; width: 140px;
         }
+        button, .file-upload-btn {
+            background: rgba(0, 255, 255, 0.15); border: 1px solid rgba(0, 255, 255, 0.4);
+            color: var(--accent); padding: 8px 16px; border-radius: 6px; cursor: pointer;
+            font-weight: 800; font-size: 12px; transition: 0.2s; text-align: center;
+        }
+        button:hover, .file-upload-btn:hover { background: var(--accent); color: #000; }
+        input[type="file"] { display: none; }
 
         #hud-right { padding: 12px 20px; text-align: right; pointer-events: auto; }
-        
-        .stats { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.1em; line-height: 1.6; }
-        .stats span { color: var(--text-main); font-weight: 800; }
+        .stats { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
+        .stats span { color: white; font-weight: 800; }
 
-        /* Кнопка Аудио */
-        #audio-btn {
-            margin-top: 12px; background: rgba(0, 255, 255, 0.1);
-            border: 1px solid rgba(0, 255, 255, 0.3); color: #00ffff;
-            padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 800;
-            cursor: pointer; transition: all 0.3s; pointer-events: auto;
-        }
-        #audio-btn:hover { background: rgba(0, 255, 255, 0.3); box-shadow: 0 0 15px rgba(0,255,255,0.4); }
-        #audio-btn.active { background: #00ffff; color: #000; }
-
-        #overlay {
-            position: fixed; inset: 0; background: #020202;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; transition: opacity 0.8s; gap: 24px;
-        }
+        #overlay { position: fixed; inset: 0; background: #020202; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s; }
         #overlay.hidden { opacity: 0; pointer-events: none; }
-
-        .loader-ring {
-            width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.05);
-            border-top-color: var(--accent); border-radius: 50%;
-            animation: spin 1s infinite; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        #cam-preview {
-            position: fixed; bottom: 24px; right: 24px;
-            width: 140px; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden;
-            border: 1px solid var(--glass-border); opacity: 0.6; z-index: 10;
-            transform: scaleX(-1); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        }
+        
+        #cam-preview { position: fixed; bottom: 20px; right: 20px; width: 120px; border-radius: 12px; overflow: hidden; border: 1px solid var(--glass-border); opacity: 0.6; z-index: 10; transform: scaleX(-1); pointer-events: none; }
         #cam-preview video { width: 100%; height: 100%; object-fit: cover; }
 
-        #gesture-dock {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            z-index: 10; display: flex; gap: 12px; padding: 12px 24px;
-            flex-wrap: wrap; justify-content: center; max-width: 90vw;
-        }
-        
-        .gesture-item { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
-        .gesture-icon { font-size: 16px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px; }
+        #gesture-dock { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10; display: flex; gap: 12px; padding: 10px 20px; flex-wrap: wrap; justify-content: center; }
+        .gesture-item { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); display: flex; align-items: center; gap: 6px; }
 
-        #time-frozen {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 48px; font-weight: 900; color: #fff; letter-spacing: 0.2em;
-            text-shadow: 0 0 30px #00ffff; opacity: 0; pointer-events: none; z-index: 50;
-            transition: opacity 0.3s;
-        }
-        #time-frozen.show { opacity: 0.8; }
-
-        #hand-cursor {
-            position: fixed; width: 32px; height: 32px; border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.9); pointer-events: none; z-index: 20;
-            transform: translate(-50%, -50%); transition: all 0.1s; mix-blend-mode: screen;
-        }
+        #hand-cursor { position: fixed; width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; pointer-events: none; z-index: 20; transform: translate(-50%, -50%); transition: 0.1s; }
     </style>
 
     <script type="importmap">
@@ -124,32 +77,41 @@
 </head>
 <body>
 
-<div id="overlay">
-    <div class="loader-ring"></div>
-    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: gray;">АКТИВАЦИЯ НЕЙРОСЕТИ...</div>
-</div>
+<div id="overlay"><div style="color: #0ff; font-weight: bold; letter-spacing: 2px;">ЗАГРУЗКА ИИ...</div></div>
 
-<div id="time-frozen">TIME FROZEN</div>
 <div id="canvas-container"></div>
 
 <div id="hud">
-    <div id="hud-left" class="glass-panel"><div id="shape-name">ХАОС</div></div>
+    <div id="hud-left" class="glass-panel">
+        <div id="shape-name">ХАОС</div>
+        
+        <div class="control-group">
+            <div class="input-row">
+                <input type="text" id="custom-text" placeholder="Ваше слово..." maxlength="8">
+                <button id="apply-text">TEXT</button>
+            </div>
+            
+            <label class="file-upload-btn">
+                <input type="file" id="model-upload" accept=".glb,.gltf">
+                📁 ЗАГРУЗИТЬ 3D (.glb)
+            </label>
+        </div>
+    </div>
+    
     <div id="hud-right" class="glass-panel">
         <div class="stats"><span id="fps-counter">60</span> FPS</div>
         <div class="stats"><span id="p-count">0</span> ЧАСТИЦ</div>
-        <button id="audio-btn">🎤 AUDIO REACT</button>
+        <button id="audio-btn" style="margin-top: 10px;">🎤 AUDIO REACT</button>
     </div>
 </div>
 
 <div id="hand-cursor"></div>
-
 <div id="cam-preview"><video id="video-el" autoplay playsinline muted></video></div>
 
 <div id="gesture-dock" class="glass-panel">
-    <div class="gesture-item"><span class="gesture-icon">🤏</span> ФОРМА (Указ+Большой)</div>
-    <div class="gesture-item"><span class="gesture-icon">🫰</span> ЦВЕТ (Средн+Большой)</div>
-    <div class="gesture-item"><span class="gesture-icon">✌️</span> ПАУЗА (Два пальца)</div>
-    <div class="gesture-item"><span class="gesture-icon">✊</span> ВЗРЫВ (Кулак)</div>
+    <div class="gesture-item">🤏 СМЕНА ФОРМЫ</div>
+    <div class="gesture-item">🫰 ЦВЕТ</div>
+    <div class="gesture-item">✌️ ПАУЗА</div>
 </div>
 
 <script type="module">
@@ -157,258 +119,281 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; // Подключаем загрузчик 3D моделей
 
-// ============================================================
-// КОНФИГУРАЦИЯ И СТЕЙТ
-// ============================================================
+// ==========================================
+// КОНФИГУРАЦИЯ И ОПТИМИЗАЦИЯ
+// ==========================================
 const CONFIG = {
-    PARTICLE_COUNT: window.innerWidth < 768 ? 3000 : 7000,
-    LERP_MORPH: 0.05,
-    PINCH_THRESHOLD: 0.25, 
-    FIST_THRESHOLD: 1.1, 
-    COOLDOWN: 800,
-    REPULSION_RADIUS: 4.5,
-    REPULSION_FORCE: 8.0,
+    PARTICLE_COUNT: window.innerWidth < 768 ? 2500 : 5000, // Снизили для стабильного FPS
+    LERP_MORPH: 0.06,
+    REPULSION_RADIUS: 4.0,
+    REPULSION_FORCE: 6.0,
 };
 
-let targetPosY = 0, currentScale = 1, targetScale = 1;
-const targetHandWorldPos = new THREE.Vector3(999, 999, 999);
-const handWorldPos = new THREE.Vector3(999, 999, 999);
-let isRepelling = false, isExploding = false, isFrozen = false;
+let currentShape = 0, currentColor = 0;
+let isRepelling = false, isFrozen = false, isExploding = false;
 let rotX = 0, rotY = 0;
 
-// Аудио Анализатор
-let audioCtx, analyser, dataArray;
-let isAudioActive = false;
-let audioBassIntencity = 0;
-
-document.getElementById('audio-btn').addEventListener('click', async (e) => {
-    if (isAudioActive) return;
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        analyser = audioCtx.createAnalyser();
-        const source = audioCtx.createMediaStreamSource(stream);
-        source.connect(analyser);
-        analyser.fftSize = 256;
-        dataArray = new Uint8Array(analyser.frequencyBinCount);
-        isAudioActive = true;
-        e.target.classList.add('active');
-        e.target.innerText = '🔊 СИНХРОНИЗИРОВАНО';
-    } catch(err) { alert("Ошибка доступа к микрофону!"); }
-});
-
-// ============================================================
-// ГЕНЕРАЦИЯ ТЕКСТА (Offscreen Canvas)
-// ============================================================
+// ==========================================
+// ГЕНЕРАТОРЫ ФОРМ И ТЕКСТА
+// ==========================================
 function genTextShape(text, n) {
     const canvas = document.createElement('canvas');
-    canvas.width = 256; canvas.height = 128;
+    canvas.width = 512; canvas.height = 256;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'black'; ctx.fillRect(0,0,256,128);
-    ctx.fillStyle = 'white'; ctx.font = 'bold 60px Inter';
+    ctx.fillStyle = 'black'; ctx.fillRect(0,0,512,256);
+    ctx.fillStyle = 'white'; 
+    ctx.font = 'bold 100px Inter';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(text, 128, 64);
+    ctx.fillText(text, 256, 128);
     
-    const imgData = ctx.getImageData(0,0,256,128).data;
+    const imgData = ctx.getImageData(0,0,512,256).data;
     const points = [];
-    for(let y = 0; y < 128; y += 2) {
-        for(let x = 0; x < 256; x += 2) {
-            if(imgData[(y*256+x)*4] > 128) {
-                points.push({x: (x-128)*0.06, y: -(y-64)*0.06});
+    for(let y = 0; y < 256; y += 3) { // Шаг для оптимизации
+        for(let x = 0; x < 512; x += 3) {
+            if(imgData[(y*512+x)*4] > 128) {
+                points.push({x: (x-256)*0.04, y: -(y-128)*0.04});
             }
         }
     }
     
     const a = new Float32Array(n * 3);
+    if(points.length === 0) return SHAPES[0].gen(n); // Если текст пустой
+
     for(let i=0; i<n; i++) {
         const p = points[i % points.length];
-        a[i*3] = p.x + (Math.random()-0.5)*0.2;
-        a[i*3+1] = p.y + (Math.random()-0.5)*0.2;
-        a[i*3+2] = (Math.random()-0.5)*0.8;
+        a[i*3] = p.x + (Math.random()-0.5)*0.1;
+        a[i*3+1] = p.y + (Math.random()-0.5)*0.1;
+        a[i*3+2] = (Math.random()-0.5)*0.5;
     }
     return a;
 }
 
-// ============================================================
-// ГЕНЕРАТОРЫ ФОРМ
-// ============================================================
 const SHAPES = [
-    { name: 'ХАОС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n*3;i++) a[i]=(Math.random()-0.5)*20; return a; } },
-    { name: 'ТОРУС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const u=Math.random()*Math.PI*2, v=Math.random()*Math.PI*2; a[i*3]=(4+1.5*Math.cos(v))*Math.cos(u); a[i*3+1]=(4+1.5*Math.cos(v))*Math.sin(u); a[i*3+2]=1.5*Math.sin(v); } return a; } },
-    { name: 'CYBER', gen: (n) => genTextShape('CYBER', n) },
-    { name: 'ДНК', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(i/n)*Math.PI*10, st=i%2; a[i*3]=Math.cos(t+st*Math.PI)*2; a[i*3+1]=(t/(Math.PI*10))*14-7; a[i*3+2]=Math.sin(t+st*Math.PI)*2; } return a; } }
+    { name: 'ХАОС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n*3;i++) a[i]=(Math.random()-0.5)*15; return a; } },
+    { name: 'СФЕРА', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const r=4, theta=Math.random()*Math.PI*2, phi=Math.acos(Math.random()*2-1); a[i*3]=r*Math.sin(phi)*Math.cos(theta); a[i*3+1]=r*Math.sin(phi)*Math.sin(theta); a[i*3+2]=r*Math.cos(phi); } return a; } },
+    { name: 'ТОРУС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const u=Math.random()*Math.PI*2, v=Math.random()*Math.PI*2; a[i*3]=(3+Math.cos(v))*Math.cos(u); a[i*3+1]=(3+Math.cos(v))*Math.sin(u); a[i*3+2]=Math.sin(v); } return a; } }
 ];
 
-const COLORS = [0x00ffff, 0xff00ff, 0x00ff88, 0xffaa00, 0xff2244];
-let currentShape = 0, currentColor = 0;
+const COLORS = [0x00ffff, 0xff00ff, 0x00ff88, 0xffaa00];
 
-// ============================================================
-// THREE.JS SETUP & POST-PROCESSING
-// ============================================================
+// ==========================================
+// ИНИЦИАЛИЗАЦИЯ THREE.JS С ОПТИМИЗАЦИЕЙ BLOOM
+// ==========================================
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x020202, 0.02);
-const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-camThree.position.z = window.innerWidth < 768 ? 14 : 10;
+const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 100);
+camThree.position.z = window.innerWidth < 768 ? 12 : 9;
 
 const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.toneMapping = THREE.ReinhardToneMapping;
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); // Ограничиваем пиксель-рейшио для FPS
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-// Post-Processing (Bloom)
 const renderScene = new RenderPass(scene, camThree);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85);
-bloomPass.threshold = 0;
-bloomPass.strength = 1.2; // Сила неонового свечения
-bloomPass.radius = 0.5;
+// ОПТИМИЗАЦИЯ: Рендерим Bloom в половинном разрешении!
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth/2, innerHeight/2), 1.2, 0.3, 0.85);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(renderScene);
 composer.addPass(bloomPass);
 
-// Частицы
-function createTex() {
-    const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
-    const ctx = canvas.getContext('2d');
-    const grad = ctx.createRadialGradient(16,16,0,16,16,16);
-    grad.addColorStop(0,'rgba(255,255,255,1)'); grad.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle = grad; ctx.fillRect(0,0,32,32); return new THREE.CanvasTexture(canvas);
-}
-
+// Создание частиц
 const N = CONFIG.PARTICLE_COUNT;
 document.getElementById('p-count').textContent = N;
 const geo = new THREE.BufferGeometry();
-const pos = new Float32Array(N * 3);
-const col = new Float32Array(N * 3);
-const target = new Float32Array(N * 3);
-const velocity = new Float32Array(N * 3);
+const pos = new Float32Array(N * 3), col = new Float32Array(N * 3), target = new Float32Array(N * 3);
 
 const initPos = SHAPES[0].gen(N);
-for (let i = 0; i < pos.length; i++) { pos[i] = initPos[i]; target[i] = initPos[i]; }
+for (let i = 0; i < N*3; i++) { pos[i] = initPos[i]; target[i] = initPos[i]; }
 
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
 
+function updateShapeName(name, colorHex) {
+    const el = document.getElementById('shape-name');
+    el.textContent = name;
+    el.style.color = `#${colorHex.toString(16).padStart(6,'0')}`;
+    el.style.textShadow = `0 0 15px ${el.style.color}`;
+}
+
 function updateColors() {
     const c = new THREE.Color(COLORS[currentColor]);
-    for (let i = 0; i < N; i++) {
-        const mix = 0.5 + Math.random() * 0.5;
-        col[i*3] = c.r * mix; col[i*3+1] = c.g * mix; col[i*3+2] = c.b * mix;
+    for (let i = 0; i < N*3; i+=3) {
+        const mix = 0.6 + Math.random() * 0.4;
+        col[i] = c.r*mix; col[i+1] = c.g*mix; col[i+2] = c.b*mix;
     }
     geo.attributes.color.needsUpdate = true;
-    
-    // Обновление UI
-    const shape = SHAPES[currentShape];
-    const nameEl = document.getElementById('shape-name');
-    nameEl.textContent = shape.name;
-    nameEl.style.color = `#${c.getHexString()}`;
-    nameEl.style.textShadow = `0 0 20px ${nameEl.style.color}`;
+    updateShapeName(document.getElementById('shape-name').textContent, COLORS[currentColor]);
 }
 updateColors();
 
-const mat = new THREE.PointsMaterial({
-    size: 0.25, map: createTex(), vertexColors: true, 
-    transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
-});
+function createTex() {
+    const c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(8,8,0,8,8,8);
+    g.addColorStop(0,'#fff'); g.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,16,16); return new THREE.CanvasTexture(c);
+}
+
+const mat = new THREE.PointsMaterial({ size: 0.2, map: createTex(), vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
 const particles = new THREE.Points(geo, mat);
 scene.add(particles);
 
-function applyShape() {
-    const s = SHAPES[currentShape].gen(N);
-    for (let i = 0; i < target.length; i++) target[i] = s[i];
-    updateColors();
+function setTarget(newTargetArray, name) {
+    for (let i = 0; i < N*3; i++) target[i] = newTargetArray[i];
+    updateShapeName(name, COLORS[currentColor]);
 }
 
-// ============================================================
-// MEDIAPIPE GESTURE AI
-// ============================================================
-function getDist(p1, p2) { return Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2 + (p1.z-p2.z)**2); }
+// ==========================================
+// ПОЛЬЗОВАТЕЛЬСКИЙ ВВОД (ТЕКСТ И МОДЕЛИ)
+// ==========================================
 
+// Пользовательский текст
+document.getElementById('apply-text').addEventListener('click', () => {
+    const txt = document.getElementById('custom-text').value.trim() || 'TEXT';
+    setTarget(genTextShape(txt, N), txt);
+});
+
+// Загрузка 3D Модели (.glb / .gltf)
+document.getElementById('model-upload').addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const loader = new GLTFLoader();
+    const url = URL.createObjectURL(file);
+    const modelName = file.name.split('.')[0].substring(0, 8).toUpperCase(); // Берем имя файла
+    
+    updateShapeName("ЗАГРУЗКА...", 0xffffff);
+
+    loader.load(url, (gltf) => {
+        const points = [];
+        
+        // Проходим по всей модели и собираем вершины
+        gltf.scene.traverse((child) => {
+            if (child.isMesh) {
+                const posAttr = child.geometry.attributes.position;
+                const matrix = child.matrixWorld;
+                const vec = new THREE.Vector3();
+                for(let i=0; i<posAttr.count; i++) {
+                    vec.fromBufferAttribute(posAttr, i);
+                    vec.applyMatrix4(matrix); // Применяем трансформации модели
+                    points.push(vec.clone());
+                }
+            }
+        });
+
+        if(points.length === 0) {
+            updateShapeName("ОШИБКА МОДЕЛИ", 0xff0000);
+            return;
+        }
+
+        // Центрируем и масштабируем модель, чтобы она влезла в экран
+        const box = new THREE.Box3().setFromPoints(points);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale = 8.0 / maxDim; // Приводим к размеру сферы радиусом ~4
+
+        const newTargets = new Float32Array(N * 3);
+        for(let i = 0; i < N; i++) {
+            // Если вершин меньше чем N, зацикливаем выборку вершин
+            const p = points[i % points.length]; 
+            newTargets[i*3] = (p.x - center.x) * scale;
+            newTargets[i*3+1] = (p.y - center.y) * scale;
+            newTargets[i*3+2] = (p.z - center.z) * scale;
+        }
+
+        setTarget(newTargets, modelName);
+        URL.revokeObjectURL(url); // Очищаем память
+    }, undefined, (error) => {
+        console.error(error);
+        updateShapeName("ОШИБКА", 0xff0000);
+    });
+});
+
+
+// ==========================================
+// ЖЕСТЫ И ИИ (MEDIAPIPE)
+// ==========================================
+const handWorldPos = new THREE.Vector3(999, 999, 999);
+const targetHandPos = new THREE.Vector3(999, 999, 999);
 let lastAction = 0;
-const handCursor = document.getElementById('hand-cursor');
-let handDetected = false;
+
+function getDist(p1, p2) { return Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2); } // 2D дистанция для надежности
 
 const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-handsMP.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.7 });
+handsMP.setOptions({ maxNumHands: 1, modelComplexity: 0, minDetectionConfidence: 0.6 });
 
 handsMP.onResults(results => {
     document.getElementById('overlay').classList.add('hidden');
     
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-        handDetected = false; isRepelling = false; handCursor.style.opacity = '0'; return;
+        isRepelling = false; document.getElementById('hand-cursor').style.opacity = '0'; return;
     }
 
-    handDetected = true;
-    const lm = results.multiHandLandmarks[0]; 
-    const size = getDist(lm[0], lm[9]);
+    const lm = results.multiHandLandmarks[0];
+    
+    // Перевод координат ладони (Точка 9) в 3D пространство
+    const nx = (1 - lm[9].x - 0.5) * 2;
+    const ny = -(lm[9].y - 0.5) * 2;
+    rotX = ny; rotY = nx;
 
-    const nx = (1 - lm[9].x - 0.5) * 2, ny = -(lm[9].y - 0.5) * 2;
-    rotX = ny * 2; rotY = nx * 2; targetPosY = ny * 6; 
+    document.getElementById('hand-cursor').style.left = ((1 - lm[9].x) * innerWidth) + 'px';
+    document.getElementById('hand-cursor').style.top = (lm[9].y * innerHeight) + 'px';
+    document.getElementById('hand-cursor').style.opacity = '1';
 
-    handCursor.style.left = ((1 - lm[9].x) * innerWidth) + 'px';
-    handCursor.style.top = (lm[9].y * innerHeight) + 'px';
-    handCursor.style.opacity = '1';
-
+    // Проекция руки в 3D
     const vec = new THREE.Vector3(nx, ny, 0.5).unproject(camThree);
     const dir = vec.sub(camThree.position).normalize();
-    targetHandWorldPos.copy(camThree.position).add(dir.multiplyScalar(-camThree.position.z / dir.z));
+    targetHandPos.copy(camThree.position).add(dir.multiplyScalar(-camThree.position.z / dir.z));
 
     const now = Date.now();
-    const isCooldown = (now - lastAction < CONFIG.COOLDOWN);
+    if (now - lastAction > 800) {
+        // Упрощенная, но надежная логика жестов
+        const isPinch = getDist(lm[4], lm[8]) < 0.06; // Большой и Указательный
+        const isSnap = getDist(lm[4], lm[12]) < 0.06; // Большой и Средний
+        const isPeace = lm[8].y < lm[5].y && lm[12].y < lm[9].y && lm[16].y > lm[13].y; // Два пальца вверх
 
-    // Логика жестов
-    const pinchDist = getDist(lm[4], lm[8]) / size; // Указательный + Большой
-    const snapDist = getDist(lm[4], lm[12]) / size; // Средний + Большой
-    
-    // Peace ✌️ (Указательный и средний вытянуты, остальные согнуты)
-    const peace = (lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y > lm[14].y && lm[20].y > lm[18].y);
-    
-    const fist = (getDist(lm[8], lm[0])/size < 1.1 && getDist(lm[12], lm[0])/size < 1.1 && getDist(lm[16], lm[0])/size < 1.1);
+        isFrozen = isPeace;
 
-    isFrozen = peace;
-    document.getElementById('time-frozen').classList.toggle('show', isFrozen);
-
-    if (!isCooldown) {
-        if (pinchDist < CONFIG.PINCH_THRESHOLD) { // Смена формы
-            currentShape = (currentShape + 1) % SHAPES.length; applyShape(); lastAction = now;
-        } else if (snapDist < CONFIG.PINCH_THRESHOLD) { // Смена цвета
-            currentColor = (currentColor + 1) % COLORS.length; updateColors(); lastAction = now;
-        } else if (fist) { // Взрыв
-            triggerExplosion(); lastAction = now;
+        if (isPinch) {
+            currentShape = (currentShape + 1) % SHAPES.length;
+            setTarget(SHAPES[currentShape].gen(N), SHAPES[currentShape].name);
+            lastAction = now;
+        } else if (isSnap) {
+            currentColor = (currentColor + 1) % COLORS.length;
+            updateColors();
+            lastAction = now;
         }
     }
-
-    isRepelling = (!peace && !fist && pinchDist > CONFIG.PINCH_THRESHOLD);
+    
+    isRepelling = !isFrozen; 
 });
 
-async function startCam() {
+const cameraMP = new Camera(document.getElementById('video-el'), {
+    onFrame: async () => { await handsMP.send({ image: document.getElementById('video-el') }); },
+    width: 320, height: 240 // Снизили разрешение для повышения FPS трекинга
+});
+cameraMP.start();
+
+// ==========================================
+// АУДИО И АНИМАЦИЯ
+// ==========================================
+let audioCtx, analyser, dataArray;
+document.getElementById('audio-btn').addEventListener('click', async (e) => {
+    if(analyser) return;
     try {
-        const cameraMP = new Camera(document.getElementById('video-el'), {
-            onFrame: async () => { await handsMP.send({ image: document.getElementById('video-el') }); },
-            width: 640, height: 480
-        });
-        cameraMP.start();
-    } catch(e) { alert("Включите камеру для работы магии!"); }
-}
-startCam();
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        audioCtx.createMediaStreamSource(stream).connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        e.target.innerText = '🔊 АКТИВНО';
+        e.target.style.background = '#00ffff'; e.target.style.color = '#000';
+    } catch(err) { alert("Ошибка микрофона!"); }
+});
 
-function triggerExplosion() {
-    isExploding = true;
-    for (let i = 0; i < N; i++) {
-        const angle = Math.random() * Math.PI * 2, elev = (Math.random()-0.5) * Math.PI;
-        const speed = 3.0 + Math.random() * 4.0; 
-        velocity[i*3] = Math.cos(angle)*Math.cos(elev)*speed;
-        velocity[i*3+1] = Math.sin(elev)*speed;
-        velocity[i*3+2] = Math.sin(angle)*Math.cos(elev)*speed;
-    }
-    setTimeout(() => { isExploding = false; applyShape(); }, 1200);
-}
-
-// ============================================================
-// АНИМАЦИЯ (Рендер, Векторные поля, Аудио-визуал)
-// ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
 
@@ -420,57 +405,38 @@ function animate() {
     frames++; fpsTime += delta;
     if (fpsTime >= 1) { document.getElementById('fps-counter').textContent = frames; frames = 0; fpsTime = 0; }
 
-    // Аудио Анализ
-    if (isAudioActive && analyser) {
+    if (isFrozen) { composer.render(); return; }
+
+    let bass = 0;
+    if (analyser) {
         analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        for(let i=0; i<30; i++) sum += dataArray[i]; // Берем басы
-        audioBassIntencity = sum / 30 / 255; // 0.0 - 1.0
-        bloomPass.strength = 1.2 + audioBassIntencity * 2.5; // Свечение пульсирует
-        targetScale = 1.0 + audioBassIntencity * 0.4;
+        bass = dataArray[2] / 255.0; // Берем низкие частоты
+        bloomPass.strength = 1.2 + bass * 2.0;
+        particles.scale.setScalar(1.0 + bass * 0.3);
     }
 
-    if (isFrozen) { composer.render(); return; } // Заморозка времени
-
-    handWorldPos.lerp(targetHandWorldPos, 0.2);
-    particles.rotation.x += (rotX - particles.rotation.x) * 0.05;
-    particles.rotation.y += (rotY - particles.rotation.y) * 0.05;
-    particles.rotation.z = time * 0.05;
-
-    currentScale += (targetScale - currentScale) * 0.1;
-    particles.scale.set(currentScale, currentScale, currentScale);
+    handWorldPos.lerp(targetHandPos, 0.2);
+    particles.rotation.x += (rotX * 0.5 - particles.rotation.x) * 0.1;
+    particles.rotation.y += (rotY * 0.5 - particles.rotation.y) * 0.1;
 
     const pArr = geo.attributes.position.array;
-    const locHand = particles.worldToLocal(handWorldPos.clone());
-    
+    const hX = handWorldPos.x, hY = handWorldPos.y, hZ = handWorldPos.z;
+    const radSq = CONFIG.REPULSION_RADIUS * CONFIG.REPULSION_RADIUS;
+
     for (let i = 0; i < N; i++) {
         const idx = i * 3;
-        if (isExploding) {
-            pArr[idx] += velocity[idx] * delta * 15;
-            pArr[idx+1] += velocity[idx+1] * delta * 15;
-            pArr[idx+2] += velocity[idx+2] * delta * 15;
-            velocity[idx] *= 0.9; velocity[idx+1] *= 0.9; velocity[idx+2] *= 0.9;
-            continue;
-        }
-
         let tx = target[idx], ty = target[idx+1], tz = target[idx+2];
 
-        // Flow Fields (Математическая симуляция потоков / шума)
-        if (currentShape === 0) { // Только в Хаосе
-            tx += Math.sin(ty * 0.5 + time) * 2.0;
-            ty += Math.cos(tx * 0.5 + time) * 2.0;
-        }
+        // Добавляем микро-колебания (дыхание)
+        tx += Math.sin(time * 2 + i) * 0.05;
+        ty += Math.cos(time * 2 + i) * 0.05;
 
-        // Отталкивание от руки с учетом гидродинамики (завихрения)
         if (isRepelling) {
-            const dx = pArr[idx] - locHand.x, dy = pArr[idx+1] - locHand.y, dz = pArr[idx+2] - locHand.z;
-            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-            if (dist < CONFIG.REPULSION_RADIUS) {
-                const force = (CONFIG.REPULSION_RADIUS - dist) / CONFIG.REPULSION_RADIUS;
-                // Добавляем эффект закручивания (cross product)
-                tx += (dx/dist + dy*0.5) * force * CONFIG.REPULSION_FORCE;
-                ty += (dy/dist - dx*0.5) * force * CONFIG.REPULSION_FORCE;
-                tz += (dz/dist) * force * CONFIG.REPULSION_FORCE;
+            const dx = pArr[idx] - hX, dy = pArr[idx+1] - hY, dz = pArr[idx+2] - hZ;
+            const distSq = dx*dx + dy*dy + dz*dz;
+            if (distSq < radSq) {
+                const force = (CONFIG.REPULSION_RADIUS - Math.sqrt(distSq)) / CONFIG.REPULSION_RADIUS;
+                tx += dx * force; ty += dy * force; tz += dz * force;
             }
         }
 
@@ -480,7 +446,7 @@ function animate() {
     }
     
     geo.attributes.position.needsUpdate = true;
-    composer.render(); // Используем composer вместо renderer.render
+    composer.render();
 }
 
 animate();
@@ -488,6 +454,7 @@ animate();
 window.addEventListener('resize', () => {
     camThree.aspect = innerWidth / innerHeight; camThree.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+    bloomPass.resolution.set(innerWidth/2, innerHeight/2); // Важно обновлять разрешение блума
 });
 </script>
 </body>
