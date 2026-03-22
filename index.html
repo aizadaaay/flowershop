@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✋ Particle Universe 5.0 - CINEMATIC PRO</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;500&display=swap" rel="stylesheet">
+    <title>✋ Hand Particle Universe 5.0 - ULTIMATE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     
     <style>
         :root {
-            --glass-bg: rgba(10, 10, 12, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(10, 10, 12, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --glass-blur: blur(20px);
             --text-main: #ffffff;
-            --text-muted: rgba(255, 255, 255, 0.4);
-            --accent: #00e5ff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+            --accent: #00ffff;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -22,152 +22,134 @@
             background: #020202;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
-            color: var(--text-main);
-            user-select: none;
+            touch-action: none; user-select: none; color: var(--text-main);
         }
 
         #canvas-container { position: fixed; inset: 0; z-index: 1; }
 
-        /* Утонченный Premium UI */
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
             border: 1px solid var(--glass-border);
-            border-radius: 8px;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         #hud {
             position: fixed; top: 0; left: 0; right: 0;
-            padding: 30px; display: flex;
-            justify-content: space-between; align-items: flex-start;
-            pointer-events: none; z-index: 10;
+            padding: 24px; display: flex; justify-content: space-between;
+            align-items: flex-start; pointer-events: none; z-index: 10;
         }
 
+        #hud-left { padding: 12px 24px; display: flex; align-items: center; justify-content: center; }
+        
         #shape-name {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 20px; font-weight: 700;
-            letter-spacing: 0.3em;
-            text-transform: uppercase;
-            padding: 12px 24px;
-            transition: color 0.4s, text-shadow 0.4s;
+            font-size: clamp(16px, 3vw, 22px); 
+            font-weight: 800; letter-spacing: 0.15em; text-transform: uppercase;
+            transition: color 0.6s, text-shadow 0.6s;
         }
 
-        #controls-right {
-            display: flex; flex-direction: column; gap: 12px; align-items: flex-end;
-            pointer-events: auto;
-        }
+        #hud-right { padding: 12px 20px; text-align: right; pointer-events: auto; }
+        
+        .stats { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.1em; line-height: 1.6; }
+        .stats span { color: var(--text-main); font-weight: 800; }
 
-        .stats-panel { padding: 12px 20px; text-align: right; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--text-muted); }
-        .stats-panel span { color: var(--text-main); font-weight: 700; }
+        /* Кнопка Аудио */
+        #audio-btn {
+            margin-top: 12px; background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3); color: #00ffff;
+            padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 800;
+            cursor: pointer; transition: all 0.3s; pointer-events: auto;
+        }
+        #audio-btn:hover { background: rgba(0, 255, 255, 0.3); box-shadow: 0 0 15px rgba(0,255,255,0.4); }
+        #audio-btn.active { background: #00ffff; color: #000; }
 
-        /* Кнопка микрофона */
-        #mic-btn {
-            padding: 12px 20px; cursor: pointer; color: var(--text-muted);
-            font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
-            transition: all 0.3s ease; border: 1px solid var(--glass-border);
-        }
-        #mic-btn:hover { color: var(--accent); border-color: var(--accent); }
-        #mic-btn.active { background: rgba(0, 229, 255, 0.1); color: var(--accent); border-color: var(--accent); box-shadow: 0 0 15px rgba(0, 229, 255, 0.2); }
-
-        /* Превью камеры */
-        #cam-preview {
-            position: fixed; bottom: 30px; right: 30px;
-            width: 120px; aspect-ratio: 4/3;
-            border-radius: 8px; overflow: hidden;
-            border: 1px solid var(--glass-border);
-            opacity: 0.3; z-index: 10; transform: scaleX(-1);
-            transition: opacity 0.4s;
-        }
-        #cam-preview:hover { opacity: 0.8; }
-        #cam-preview video { width: 100%; height: 100%; object-fit: cover; }
-
-        /* Центральный минималистичный Dock */
-        #gesture-dock {
-            position: fixed; bottom: 30px; left: 50%;
-            transform: translateX(-50%); z-index: 10;
-            display: flex; gap: 2px; padding: 4px; border-radius: 8px;
-        }
-        .gesture-item {
-            font-size: 10px; font-weight: 500; color: var(--text-muted);
-            letter-spacing: 0.05em; padding: 8px 16px;
-            display: flex; align-items: center; gap: 8px; border-radius: 6px;
-        }
-        .gesture-item span { font-size: 14px; opacity: 0.8; }
-
-        /* Индикаторы справа */
-        #shape-dots {
-            position: fixed; top: 50%; right: 30px; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 8px; z-index: 10;
-        }
-        .dot {
-            width: 2px; height: 12px; background: rgba(255,255,255,0.1); 
-            transition: all 0.4s ease;
-        }
-        .dot.active { height: 24px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
-
-        /* Экран загрузки */
         #overlay {
             position: fixed; inset: 0; background: #020202;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 100; transition: opacity 1s ease; gap: 20px;
+            z-index: 100; transition: opacity 0.8s; gap: 24px;
         }
         #overlay.hidden { opacity: 0; pointer-events: none; }
-        .loader { width: 40px; height: 40px; border: 1px solid rgba(255,255,255,0.1); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        #overlay-text { font-family: 'Orbitron', sans-serif; font-size: 12px; letter-spacing: 0.4em; color: var(--text-muted); animation: pulse 2s infinite; }
-        @keyframes pulse { 50% { opacity: 0.3; } }
 
-        #time-freeze-fx { position: fixed; inset: 0; box-shadow: inset 0 0 150px rgba(0,255,255,0); pointer-events: none; z-index: 50; transition: box-shadow 0.3s; }
-        #time-freeze-fx.active { box-shadow: inset 0 0 150px rgba(0,255,255,0.2); }
+        .loader-ring {
+            width: 48px; height: 48px; border: 3px solid rgba(255,255,255,0.05);
+            border-top-color: var(--accent); border-radius: 50%;
+            animation: spin 1s infinite; box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        #cam-preview {
+            position: fixed; bottom: 24px; right: 24px;
+            width: 140px; aspect-ratio: 4/3; border-radius: 16px; overflow: hidden;
+            border: 1px solid var(--glass-border); opacity: 0.6; z-index: 10;
+            transform: scaleX(-1); pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        #cam-preview video { width: 100%; height: 100%; object-fit: cover; }
+
+        #gesture-dock {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 10; display: flex; gap: 12px; padding: 12px 24px;
+            flex-wrap: wrap; justify-content: center; max-width: 90vw;
+        }
+        
+        .gesture-item { font-size: 11px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; }
+        .gesture-icon { font-size: 16px; background: rgba(255,255,255,0.1); padding: 4px; border-radius: 8px; }
+
+        #time-frozen {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 48px; font-weight: 900; color: #fff; letter-spacing: 0.2em;
+            text-shadow: 0 0 30px #00ffff; opacity: 0; pointer-events: none; z-index: 50;
+            transition: opacity 0.3s;
+        }
+        #time-frozen.show { opacity: 0.8; }
+
+        #hand-cursor {
+            position: fixed; width: 32px; height: 32px; border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.9); pointer-events: none; z-index: 20;
+            transform: translate(-50%, -50%); transition: all 0.1s; mix-blend-mode: screen;
+        }
     </style>
 
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.150.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.150.0/examples/jsm/"
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
             }
         }
     </script>
-
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/simplex-noise/2.4.0/simplex-noise.min.js"></script>
 </head>
 <body>
 
 <div id="overlay">
-    <div class="loader"></div>
-    <div id="overlay-text">СИНХРОНИЗАЦИЯ...</div>
+    <div class="loader-ring"></div>
+    <div style="font-size: 13px; font-weight: 600; letter-spacing: 0.2em; color: gray;">АКТИВАЦИЯ НЕЙРОСЕТИ...</div>
 </div>
 
-<div id="time-freeze-fx"></div>
+<div id="time-frozen">TIME FROZEN</div>
 <div id="canvas-container"></div>
 
 <div id="hud">
-    <div id="shape-name" class="glass-panel">ХАОС</div>
-    <div id="controls-right">
-        <div class="stats-panel glass-panel">
-            <span id="fps-counter">60</span> FPS<br>
-            <span id="p-count">0</span> ЧАСТИЦ
-        </div>
-        <div id="mic-btn" class="glass-panel">🎤 Аудио-вход</div>
+    <div id="hud-left" class="glass-panel"><div id="shape-name">ХАОС</div></div>
+    <div id="hud-right" class="glass-panel">
+        <div class="stats"><span id="fps-counter">60</span> FPS</div>
+        <div class="stats"><span id="p-count">0</span> ЧАСТИЦ</div>
+        <button id="audio-btn">🎤 AUDIO REACT</button>
     </div>
 </div>
 
-<div id="shape-dots"></div>
+<div id="hand-cursor"></div>
 
-<div id="cam-preview">
-    <video id="video-el" autoplay playsinline muted></video>
-</div>
+<div id="cam-preview"><video id="video-el" autoplay playsinline muted></video></div>
 
 <div id="gesture-dock" class="glass-panel">
-    <div class="gesture-item"><span>🖐</span> ОТТАЛКИВАНИЕ</div>
-    <div class="gesture-item"><span>✌️</span> ЗАМОРОЗКА (PEACE)</div>
-    <div class="gesture-item"><span>👌</span> СМЕНА ЦВЕТА (OK)</div>
-    <div class="gesture-item"><span>✊</span> ВЗРЫВ</div>
+    <div class="gesture-item"><span class="gesture-icon">🤏</span> ФОРМА (Указ+Большой)</div>
+    <div class="gesture-item"><span class="gesture-icon">🫰</span> ЦВЕТ (Средн+Большой)</div>
+    <div class="gesture-item"><span class="gesture-icon">✌️</span> ПАУЗА (Два пальца)</div>
+    <div class="gesture-item"><span class="gesture-icon">✊</span> ВЗРЫВ (Кулак)</div>
 </div>
 
 <script type="module">
@@ -176,276 +158,257 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
-// ==========================================
-// 1. АУДИО-РЕАКТИВНОСТЬ
-// ==========================================
-let audioCtx, analyser, dataArray;
-let audioEnabled = false;
-let currentBass = 0;
-
-document.getElementById('mic-btn').addEventListener('click', async (e) => {
-    if (!audioEnabled) {
-        try {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            analyser = audioCtx.createAnalyser();
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const source = audioCtx.createMediaStreamSource(stream);
-            source.connect(analyser);
-            analyser.fftSize = 256;
-            dataArray = new Uint8Array(analyser.frequencyBinCount);
-            audioEnabled = true;
-            e.target.classList.add('active');
-            e.target.innerText = '🔊 АУДИО АКТИВНО';
-        } catch (err) { alert('Ошибка доступа к микрофону'); }
-    }
-});
-
-// ==========================================
-// 2. ГЕНЕРАТОРЫ ФОРМ И ТЕКСТА
-// ==========================================
+// ============================================================
+// КОНФИГУРАЦИЯ И СТЕЙТ
+// ============================================================
 const CONFIG = {
-    PARTICLE_COUNT: 3000,
-    LERP_MORPH: 0.04,
+    PARTICLE_COUNT: window.innerWidth < 768 ? 3000 : 7000,
+    LERP_MORPH: 0.05,
+    PINCH_THRESHOLD: 0.25, 
+    FIST_THRESHOLD: 1.1, 
+    COOLDOWN: 800,
     REPULSION_RADIUS: 4.5,
-    REPULSION_FORCE: 8.0, 
-    NOISE_STRENGTH: 0.5 // Сила завихрений (Flow Fields)
+    REPULSION_FORCE: 8.0,
 };
 
-// Функция для генерации координат из текста
-function genText(n, text="CYBER") {
+let targetPosY = 0, currentScale = 1, targetScale = 1;
+const targetHandWorldPos = new THREE.Vector3(999, 999, 999);
+const handWorldPos = new THREE.Vector3(999, 999, 999);
+let isRepelling = false, isExploding = false, isFrozen = false;
+let rotX = 0, rotY = 0;
+
+// Аудио Анализатор
+let audioCtx, analyser, dataArray;
+let isAudioActive = false;
+let audioBassIntencity = 0;
+
+document.getElementById('audio-btn').addEventListener('click', async (e) => {
+    if (isAudioActive) return;
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+        analyser.fftSize = 256;
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+        isAudioActive = true;
+        e.target.classList.add('active');
+        e.target.innerText = '🔊 СИНХРОНИЗИРОВАНО';
+    } catch(err) { alert("Ошибка доступа к микрофону!"); }
+});
+
+// ============================================================
+// ГЕНЕРАЦИЯ ТЕКСТА (Offscreen Canvas)
+// ============================================================
+function genTextShape(text, n) {
     const canvas = document.createElement('canvas');
     canvas.width = 256; canvas.height = 128;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#000'; ctx.fillRect(0,0,256,128);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 64px Orbitron, sans-serif';
+    ctx.fillStyle = 'black'; ctx.fillRect(0,0,256,128);
+    ctx.fillStyle = 'white'; ctx.font = 'bold 60px Inter';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, 128, 64);
     
-    const data = ctx.getImageData(0,0,256,128).data;
+    const imgData = ctx.getImageData(0,0,256,128).data;
     const points = [];
-    for(let y=0; y<128; y+=2){
-        for(let x=0; x<256; x+=2){
-            if(data[(y*256+x)*4] > 128) points.push({x: (x-128)*0.08, y: -(y-64)*0.08});
+    for(let y = 0; y < 128; y += 2) {
+        for(let x = 0; x < 256; x += 2) {
+            if(imgData[(y*256+x)*4] > 128) {
+                points.push({x: (x-128)*0.06, y: -(y-64)*0.06});
+            }
         }
     }
-    const a = new Float32Array(n*3);
+    
+    const a = new Float32Array(n * 3);
     for(let i=0; i<n; i++) {
-        const p = points[Math.floor(Math.random()*points.length)];
-        a[i*3] = p.x + (Math.random()-0.5)*0.15;
-        a[i*3+1] = p.y + (Math.random()-0.5)*0.15;
-        a[i*3+2] = (Math.random()-0.5)*0.5;
+        const p = points[i % points.length];
+        a[i*3] = p.x + (Math.random()-0.5)*0.2;
+        a[i*3+1] = p.y + (Math.random()-0.5)*0.2;
+        a[i*3+2] = (Math.random()-0.5)*0.8;
     }
     return a;
 }
 
-function genRandom(n) { const a = new Float32Array(n*3); for(let i=0;i<n;i++){ a[i*3]=(Math.random()-0.5)*18; a[i*3+1]=(Math.random()-0.5)*18; a[i*3+2]=(Math.random()-0.5)*18; } return a; }
-function genSphere(n) { const a = new Float32Array(n*3); const r=4.5; for(let i=0;i<n;i++){ const t=Math.random()*2*Math.PI, p=Math.acos(2*Math.random()-1), dr=r+(Math.random()-0.5)*0.3; a[i*3]=dr*Math.sin(p)*Math.cos(t); a[i*3+1]=dr*Math.sin(p)*Math.sin(t); a[i*3+2]=dr*Math.cos(p); } return a; }
-
+// ============================================================
+// ГЕНЕРАТОРЫ ФОРМ
+// ============================================================
 const SHAPES = [
-    { name: 'ХАОС', color: 0x00e5ff, gen: genRandom },
-    { name: 'СФЕРА', color: 0xff0055, gen: genSphere },
-    { name: 'ТЕКСТ', color: 0xffaa00, gen: (n) => genText(n, "CYBER") }, // ИНТЕРАКТИВНЫЙ ТЕКСТ
+    { name: 'ХАОС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n*3;i++) a[i]=(Math.random()-0.5)*20; return a; } },
+    { name: 'ТОРУС', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const u=Math.random()*Math.PI*2, v=Math.random()*Math.PI*2; a[i*3]=(4+1.5*Math.cos(v))*Math.cos(u); a[i*3+1]=(4+1.5*Math.cos(v))*Math.sin(u); a[i*3+2]=1.5*Math.sin(v); } return a; } },
+    { name: 'CYBER', gen: (n) => genTextShape('CYBER', n) },
+    { name: 'ДНК', gen: (n) => { const a=new Float32Array(n*3); for(let i=0;i<n;i++){ const t=(i/n)*Math.PI*10, st=i%2; a[i*3]=Math.cos(t+st*Math.PI)*2; a[i*3+1]=(t/(Math.PI*10))*14-7; a[i*3+2]=Math.sin(t+st*Math.PI)*2; } return a; } }
 ];
 
-let currentShape = 0;
-const simplex = new SimplexNoise(); // Для Flow Fields
+const COLORS = [0x00ffff, 0xff00ff, 0x00ff88, 0xffaa00, 0xff2244];
+let currentShape = 0, currentColor = 0;
 
-// ==========================================
-// 3. ИНИЦИАЛИЗАЦИЯ THREE.JS И POST-PROCESSING
-// ==========================================
+// ============================================================
+// THREE.JS SETUP & POST-PROCESSING
+// ============================================================
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x020202, 0.03);
-
+scene.fog = new THREE.FogExp2(0x020202, 0.02);
 const camThree = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 1000);
-camThree.position.z = 10;
+camThree.position.z = window.innerWidth < 768 ? 14 : 10;
 
-const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: "high-performance" });
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.toneMapping = THREE.ReinhardToneMapping;
 document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-// Kинематографичный Bloom
+// Post-Processing (Bloom)
 const renderScene = new RenderPass(scene, camThree);
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 1.5, 0.4, 0.85);
-bloomPass.threshold = 0.1;
-bloomPass.strength = 1.2; // Сила свечения
+bloomPass.threshold = 0;
+bloomPass.strength = 1.2; // Сила неонового свечения
 bloomPass.radius = 0.5;
 
 const composer = new EffectComposer(renderer);
 composer.addPass(renderScene);
 composer.addPass(bloomPass);
 
-// ==========================================
-// ЧАСТИЦЫ
-// ==========================================
+// Частицы
+function createTex() {
+    const canvas = document.createElement('canvas'); canvas.width = 32; canvas.height = 32;
+    const ctx = canvas.getContext('2d');
+    const grad = ctx.createRadialGradient(16,16,0,16,16,16);
+    grad.addColorStop(0,'rgba(255,255,255,1)'); grad.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = grad; ctx.fillRect(0,0,32,32); return new THREE.CanvasTexture(canvas);
+}
+
 const N = CONFIG.PARTICLE_COUNT;
 document.getElementById('p-count').textContent = N;
 const geo = new THREE.BufferGeometry();
 const pos = new Float32Array(N * 3);
 const col = new Float32Array(N * 3);
 const target = new Float32Array(N * 3);
-const velocity = new Float32Array(N * 3); // Для физики взрыва
+const velocity = new Float32Array(N * 3);
 
-const initPos = genRandom(N);
+const initPos = SHAPES[0].gen(N);
 for (let i = 0; i < pos.length; i++) { pos[i] = initPos[i]; target[i] = initPos[i]; }
 
 geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
 
-function updateColors(hex) {
-    const c = new THREE.Color(hex);
-    document.documentElement.style.setProperty('--accent', `#${c.getHexString()}`);
+function updateColors() {
+    const c = new THREE.Color(COLORS[currentColor]);
     for (let i = 0; i < N; i++) {
-        const noise = 0.5 + Math.random() * 0.5;
-        col[i*3] = c.r * noise; col[i*3+1] = c.g * noise; col[i*3+2] = c.b * noise;
+        const mix = 0.5 + Math.random() * 0.5;
+        col[i*3] = c.r * mix; col[i*3+1] = c.g * mix; col[i*3+2] = c.b * mix;
     }
     geo.attributes.color.needsUpdate = true;
+    
+    // Обновление UI
+    const shape = SHAPES[currentShape];
+    const nameEl = document.getElementById('shape-name');
+    nameEl.textContent = shape.name;
+    nameEl.style.color = `#${c.getHexString()}`;
+    nameEl.style.textShadow = `0 0 20px ${nameEl.style.color}`;
 }
-updateColors(SHAPES[0].color);
+updateColors();
 
 const mat = new THREE.PointsMaterial({
-    size: 0.12,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.8,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
+    size: 0.25, map: createTex(), vertexColors: true, 
+    transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false
 });
-
 const particles = new THREE.Points(geo, mat);
 scene.add(particles);
 
-// UI Индикаторы
-const dotsContainer = document.getElementById('shape-dots');
-SHAPES.forEach((_, i) => {
-    const d = document.createElement('div');
-    d.className = 'dot' + (i === 0 ? ' active' : '');
-    dotsContainer.appendChild(d);
-});
-
-function setShape(idx) {
-    const shape = SHAPES[idx];
-    const newPos = shape.gen(N);
-    for (let i = 0; i < target.length; i++) target[i] = newPos[i];
-
-    const title = document.getElementById('shape-name');
-    title.textContent = shape.name;
-    title.style.color = `#${shape.color.toString(16).padStart(6,'0')}`;
-    
-    updateColors(shape.color);
-    document.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+function applyShape() {
+    const s = SHAPES[currentShape].gen(N);
+    for (let i = 0; i < target.length; i++) target[i] = s[i];
+    updateColors();
 }
 
-// ==========================================
-// 4. ML МАГИЯ: УМНЫЕ ЖЕСТЫ И MEDIAPIPE
-// ==========================================
-const videoEl = document.getElementById('video-el');
-let handWorldPos = new THREE.Vector3(999,999,999);
-let isRepelling = false;
-let isTimeFrozen = false;
-let isExploding = false;
-let lastColorChange = 0;
+// ============================================================
+// MEDIAPIPE GESTURE AI
+// ============================================================
+function getDist(p1, p2) { return Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2 + (p1.z-p2.z)**2); }
+
+let lastAction = 0;
+const handCursor = document.getElementById('hand-cursor');
+let handDetected = false;
 
 const handsMP = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
-handsMP.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.65 });
-
-function getDist(p1, p2) { return Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2); }
+handsMP.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.7 });
 
 handsMP.onResults(results => {
     document.getElementById('overlay').classList.add('hidden');
     
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-        isRepelling = false; isTimeFrozen = false;
-        document.getElementById('time-freeze-fx').classList.remove('active');
-        return;
+        handDetected = false; isRepelling = false; handCursor.style.opacity = '0'; return;
     }
 
-    const lm = results.multiHandLandmarks[0];
-    const wrist = lm[0];
-    const palm = lm[9];
-    
-    // Проекция руки в 3D
-    const nx = (1 - palm.x - 0.5) * 2;
-    const ny = -(palm.y - 0.5) * 2;
+    handDetected = true;
+    const lm = results.multiHandLandmarks[0]; 
+    const size = getDist(lm[0], lm[9]);
+
+    const nx = (1 - lm[9].x - 0.5) * 2, ny = -(lm[9].y - 0.5) * 2;
+    rotX = ny * 2; rotY = nx * 2; targetPosY = ny * 6; 
+
+    handCursor.style.left = ((1 - lm[9].x) * innerWidth) + 'px';
+    handCursor.style.top = (lm[9].y * innerHeight) + 'px';
+    handCursor.style.opacity = '1';
+
     const vec = new THREE.Vector3(nx, ny, 0.5).unproject(camThree);
     const dir = vec.sub(camThree.position).normalize();
-    handWorldPos.copy(camThree.position).add(dir.multiplyScalar(10));
-
-    // АНАЛИЗ ЖЕСТОВ (ML Magic)
-    
-    // 1. Жест "PEACE" ✌️ (Заморозка времени)
-    // Указательный(8) и Средний(12) вытянуты (выше суставов 6 и 10). Безымянный(16) и Мизинец(20) согнуты.
-    const isPeace = lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y > lm[14].y && lm[20].y > lm[18].y;
-    
-    // 2. Жест "OK" 👌 (Смена цвета)
-    // Большой(4) и Указательный(8) касаются
-    const isOK = getDist(lm[4], lm[8]) < 0.05 && lm[12].y < lm[10].y;
-
-    // 3. Жест "КУЛАК" ✊ (Взрыв)
-    const isFist = lm[8].y > lm[6].y && lm[12].y > lm[10].y && lm[16].y > lm[14].y;
-
-    const freezeFx = document.getElementById('time-freeze-fx');
-    
-    if (isPeace) {
-        isTimeFrozen = true;
-        isRepelling = false;
-        freezeFx.classList.add('active');
-    } else {
-        isTimeFrozen = false;
-        freezeFx.classList.remove('active');
-        isRepelling = !isFist && !isOK; // Отталкиваем, если ладонь открыта
-    }
+    targetHandWorldPos.copy(camThree.position).add(dir.multiplyScalar(-camThree.position.z / dir.z));
 
     const now = Date.now();
-    if (isOK && now - lastColorChange > 1000) {
-        lastColorChange = now;
-        currentShape = (currentShape + 1) % SHAPES.length; 
-        setShape(currentShape);
+    const isCooldown = (now - lastAction < CONFIG.COOLDOWN);
+
+    // Логика жестов
+    const pinchDist = getDist(lm[4], lm[8]) / size; // Указательный + Большой
+    const snapDist = getDist(lm[4], lm[12]) / size; // Средний + Большой
+    
+    // Peace ✌️ (Указательный и средний вытянуты, остальные согнуты)
+    const peace = (lm[8].y < lm[6].y && lm[12].y < lm[10].y && lm[16].y > lm[14].y && lm[20].y > lm[18].y);
+    
+    const fist = (getDist(lm[8], lm[0])/size < 1.1 && getDist(lm[12], lm[0])/size < 1.1 && getDist(lm[16], lm[0])/size < 1.1);
+
+    isFrozen = peace;
+    document.getElementById('time-frozen').classList.toggle('show', isFrozen);
+
+    if (!isCooldown) {
+        if (pinchDist < CONFIG.PINCH_THRESHOLD) { // Смена формы
+            currentShape = (currentShape + 1) % SHAPES.length; applyShape(); lastAction = now;
+        } else if (snapDist < CONFIG.PINCH_THRESHOLD) { // Смена цвета
+            currentColor = (currentColor + 1) % COLORS.length; updateColors(); lastAction = now;
+        } else if (fist) { // Взрыв
+            triggerExplosion(); lastAction = now;
+        }
     }
 
-    if (isFist && !isExploding) {
-        triggerExplosion();
-    }
+    isRepelling = (!peace && !fist && pinchDist > CONFIG.PINCH_THRESHOLD);
 });
 
-const cameraMP = new Camera(videoEl, { onFrame: async () => { await handsMP.send({ image: videoEl }); }, width: 640, height: 480 });
-cameraMP.start();
+async function startCam() {
+    try {
+        const cameraMP = new Camera(document.getElementById('video-el'), {
+            onFrame: async () => { await handsMP.send({ image: document.getElementById('video-el') }); },
+            width: 640, height: 480
+        });
+        cameraMP.start();
+    } catch(e) { alert("Включите камеру для работы магии!"); }
+}
+startCam();
 
 function triggerExplosion() {
     isExploding = true;
     for (let i = 0; i < N; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const elev = (Math.random()-0.5) * Math.PI;
-        const speed = 2.0 + Math.random() * 5.0; 
+        const angle = Math.random() * Math.PI * 2, elev = (Math.random()-0.5) * Math.PI;
+        const speed = 3.0 + Math.random() * 4.0; 
         velocity[i*3] = Math.cos(angle)*Math.cos(elev)*speed;
         velocity[i*3+1] = Math.sin(elev)*speed;
         velocity[i*3+2] = Math.sin(angle)*Math.cos(elev)*speed;
     }
-    setTimeout(() => {
-        isExploding = false;
-        const s = SHAPES[currentShape].gen(N);
-        for (let i = 0; i < target.length; i++) target[i] = s[i];
-    }, 1000);
+    setTimeout(() => { isExploding = false; applyShape(); }, 1200);
 }
 
-// Управление мышкой (если нет камеры)
-window.addEventListener('pointermove', (e) => {
-    if(document.getElementById('overlay').classList.contains('hidden')) return; // Если камера работает, мышь игнорим
-    const nx = (e.clientX / innerWidth - 0.5) * 2;
-    const ny = -(e.clientY / innerHeight - 0.5) * 2;
-    const vec = new THREE.Vector3(nx, ny, 0.5).unproject(camThree);
-    handWorldPos.copy(camThree.position).add(vec.sub(camThree.position).normalize().multiplyScalar(10));
-    isRepelling = true;
-});
-window.addEventListener('click', () => { 
-    if(document.getElementById('overlay').classList.contains('hidden')) return;
-    currentShape = (currentShape + 1) % SHAPES.length; setShape(currentShape); 
-});
-
-// ==========================================
-// 5. ГЛАВНЫЙ ЦИКЛ АНИМАЦИИ (Flow Fields + Audio)
-// ==========================================
+// ============================================================
+// АНИМАЦИЯ (Рендер, Векторные поля, Аудио-визуал)
+// ============================================================
 const clock = new THREE.Clock();
 let frames = 0, fpsTime = 0;
 
@@ -454,82 +417,78 @@ function animate() {
     const delta = clock.getDelta();
     const time = clock.getElapsedTime();
 
-    // Счётчик FPS
     frames++; fpsTime += delta;
     if (fpsTime >= 1) { document.getElementById('fps-counter').textContent = frames; frames = 0; fpsTime = 0; }
 
-    // Аудио-реактивность
-    if (audioEnabled && analyser) {
+    // Аудио Анализ
+    if (isAudioActive && analyser) {
         analyser.getByteFrequencyData(dataArray);
-        currentBass = dataArray[0] / 255.0; // Нормализуем бас от 0 до 1
-        mat.size = 0.12 + currentBass * 0.15; // Частицы увеличиваются от бита
-        bloomPass.strength = 1.2 + currentBass * 1.5; // Свечение пульсирует
+        let sum = 0;
+        for(let i=0; i<30; i++) sum += dataArray[i]; // Берем басы
+        audioBassIntencity = sum / 30 / 255; // 0.0 - 1.0
+        bloomPass.strength = 1.2 + audioBassIntencity * 2.5; // Свечение пульсирует
+        targetScale = 1.0 + audioBassIntencity * 0.4;
     }
+
+    if (isFrozen) { composer.render(); return; } // Заморозка времени
+
+    handWorldPos.lerp(targetHandWorldPos, 0.2);
+    particles.rotation.x += (rotX - particles.rotation.x) * 0.05;
+    particles.rotation.y += (rotY - particles.rotation.y) * 0.05;
+    particles.rotation.z = time * 0.05;
+
+    currentScale += (targetScale - currentScale) * 0.1;
+    particles.scale.set(currentScale, currentScale, currentScale);
 
     const pArr = geo.attributes.position.array;
-    const lerpM = isTimeFrozen ? 0 : CONFIG.LERP_MORPH; // Заморозка времени
-    const noiseSpeed = time * 0.2;
-
-    if (isExploding) {
-        for (let i = 0; i < N; i++) {
-            const i3 = i * 3;
-            pArr[i3] += velocity[i3] * delta * 15;
-            pArr[i3+1] += velocity[i3+1] * delta * 15;
-            pArr[i3+2] += velocity[i3+2] * delta * 15;
-            velocity[i3] *= 0.9; velocity[i3+1] *= 0.9; velocity[i3+2] *= 0.9;
+    const locHand = particles.worldToLocal(handWorldPos.clone());
+    
+    for (let i = 0; i < N; i++) {
+        const idx = i * 3;
+        if (isExploding) {
+            pArr[idx] += velocity[idx] * delta * 15;
+            pArr[idx+1] += velocity[idx+1] * delta * 15;
+            pArr[idx+2] += velocity[idx+2] * delta * 15;
+            velocity[idx] *= 0.9; velocity[idx+1] *= 0.9; velocity[idx+2] *= 0.9;
+            continue;
         }
-    } else {
-        for (let i = 0; i < N; i++) {
-            const i3 = i * 3;
-            let tx = target[i3]; let ty = target[i3+1]; let tz = target[i3+2];
 
-            // Имитация жидкости (Flow Fields / Perlin Noise)
-            if (!isTimeFrozen) {
-                tx += simplex.noise3D(tx * 0.2, ty * 0.2, noiseSpeed) * CONFIG.NOISE_STRENGTH;
-                ty += simplex.noise3D(ty * 0.2, tz * 0.2, noiseSpeed) * CONFIG.NOISE_STRENGTH;
-                tz += simplex.noise3D(tz * 0.2, tx * 0.2, noiseSpeed) * CONFIG.NOISE_STRENGTH;
-            }
+        let tx = target[idx], ty = target[idx+1], tz = target[idx+2];
 
-            // Физика отталкивания
-            if (isRepelling && !isTimeFrozen) {
-                const dx = pArr[i3] - handWorldPos.x;
-                const dy = pArr[i3+1] - handWorldPos.y;
-                const dz = pArr[i3+2] - handWorldPos.z;
-                const distSq = dx*dx + dy*dy + dz*dz;
-
-                if (distSq < (CONFIG.REPULSION_RADIUS**2)) {
-                    const dist = Math.sqrt(distSq);
-                    const force = (CONFIG.REPULSION_RADIUS - dist) / CONFIG.REPULSION_RADIUS;
-                    tx += (dx / dist) * force * CONFIG.REPULSION_FORCE;
-                    ty += (dy / dist) * force * CONFIG.REPULSION_FORCE;
-                    tz += (dz / dist) * force * CONFIG.REPULSION_FORCE;
-                }
-            }
-
-            pArr[i3] += (tx - pArr[i3]) * lerpM;
-            pArr[i3+1] += (ty - pArr[i3+1]) * lerpM;
-            pArr[i3+2] += (tz - pArr[i3+2]) * lerpM;
+        // Flow Fields (Математическая симуляция потоков / шума)
+        if (currentShape === 0) { // Только в Хаосе
+            tx += Math.sin(ty * 0.5 + time) * 2.0;
+            ty += Math.cos(tx * 0.5 + time) * 2.0;
         }
+
+        // Отталкивание от руки с учетом гидродинамики (завихрения)
+        if (isRepelling) {
+            const dx = pArr[idx] - locHand.x, dy = pArr[idx+1] - locHand.y, dz = pArr[idx+2] - locHand.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            if (dist < CONFIG.REPULSION_RADIUS) {
+                const force = (CONFIG.REPULSION_RADIUS - dist) / CONFIG.REPULSION_RADIUS;
+                // Добавляем эффект закручивания (cross product)
+                tx += (dx/dist + dy*0.5) * force * CONFIG.REPULSION_FORCE;
+                ty += (dy/dist - dx*0.5) * force * CONFIG.REPULSION_FORCE;
+                tz += (dz/dist) * force * CONFIG.REPULSION_FORCE;
+            }
+        }
+
+        pArr[idx] += (tx - pArr[idx]) * CONFIG.LERP_MORPH;
+        pArr[idx+1] += (ty - pArr[idx+1]) * CONFIG.LERP_MORPH;
+        pArr[idx+2] += (tz - pArr[idx+2]) * CONFIG.LERP_MORPH;
     }
+    
     geo.attributes.position.needsUpdate = true;
-
-    // Вращение сцены
-    if (!isTimeFrozen) {
-        particles.rotation.y = Math.sin(time * 0.1) * 0.5;
-        particles.rotation.x = Math.cos(time * 0.1) * 0.2;
-    }
-
-    composer.render(); // Используем EffectComposer для свечения
+    composer.render(); // Используем composer вместо renderer.render
 }
 
-window.addEventListener('resize', () => {
-    camThree.aspect = innerWidth / innerHeight;
-    camThree.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    composer.setSize(innerWidth, innerHeight);
-});
-
 animate();
+
+window.addEventListener('resize', () => {
+    camThree.aspect = innerWidth / innerHeight; camThree.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
+});
 </script>
 </body>
 </html>
